@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import chromadb
 from chromadb.utils import embedding_functions
 
-# Clean up Hugging Face warning spam in terminal
+# clean up Hugging Face warning spam in terminal
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -39,7 +39,7 @@ async def on_ready():
         print(f"Failed to sync commands: {e}")
 
 
-# 1. BACKGROUND ARCHIVER (Monitors text channels)
+# 1. archive background
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -68,29 +68,29 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-# 2. FAST EMOJI REACTION SAVE SYSTEM (Replaces manual command typing)
+# 2. emoji reaction save system
 @bot.event
 async def on_raw_reaction_add(payload):
-    # Change "🔖" to whatever emoji you want to use as your trigger
+    # change emoji to whatever for trigger
     TARGET_EMOJI = "🔖" 
     
     if str(payload.emoji) == TARGET_EMOJI:
-        # Fetch channel and message objects from the event payload
+        # fetch channel and message objects from the event payload
         channel = bot.get_channel(payload.channel_id)
         if not channel:
             channel = await bot.fetch_channel(payload.channel_id)
             
         message = await channel.fetch_message(payload.message_id)
         
-        # Don't save if the target message is blank (embeds/images only)
+        # don't save if message is blank (embeds/images)
         if not message.content or not message.content.strip():
             return
             
-        # Get the person who reacted
+        # get person who reacted
         server = bot.get_guild(payload.guild_id)
         reacter = await server.fetch_member(payload.user_id)
         
-        # Ignore if the bot reacts to itself
+        # ignore if bot reacts to itself
         if reacter == bot.user:
             return
 
@@ -108,7 +108,7 @@ async def on_raw_reaction_add(payload):
                 }],
                 ids=[quote_id]
             )
-            # Send a quick confirmation message to the channel
+            # send quick confirmation message to the channel
             await channel.send(f"🔖 *The Librarian saw your bookmark!* Saved quote from **{message.author.display_name}**.")
         except Exception as e:
             print(f"Failed to archive via reaction: {e}")
