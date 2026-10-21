@@ -1,0 +1,10 @@
+# Hide the secret environment variables file
+.env
+
+# Hide your local ChromaDB database storage folder
+library_db/
+
+# Hide your Python virtual environment folder
+.venv/
+__pycache__/
+*.pyc
