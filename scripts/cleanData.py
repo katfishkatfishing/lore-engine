@@ -119,7 +119,7 @@ def finaliseChunk(msgList: list, channel: str, chunkIndex: int) -> dict:
     endStr = msgList[-1]["time"].strftime("%Y-%m-%d %H:%M")
 
     # format transcript lines
-    transcript = "\n".join([f"{m['author']}: {m['text']}" for m in msgList])
+    transcript = "\n".join([f"{m['author']}: {m['content']}" for m in msgList])
 
     #aggregate reactions
     allReactions = []
