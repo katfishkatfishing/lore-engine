@@ -14,7 +14,7 @@ load_dotenv()  # Load environment variables from .env file
 CHUNKS_FILE = Path("data/clean/lore_chunks.json")
 CHROMA_DIR = Path("data/chromadb")
 COLLECTION_NAME = "buku_teks_sejarah"
-BATCH_SIZE = 250
+BATCH_SIZE = 100
 
 # initialise 
 api_key = os.getenv("GEMINI_API_KEY")
@@ -123,3 +123,46 @@ def search(query: str, top_k: int = 4) -> list[dict]:
             "text": results["documents"][0][i],
         })
     return formatted
+
+def ask(question: str) -> str:
+    """Full RAG pipeline, retrieves top chat chunks and generates an answer using ai"""
+    matches = search(question, top_k=4)
+    if not matches:
+        return "I do not recall any relevant information."
+
+    contextBlocks = [
+        f"[{match['time']} | #{match['channel']} | {match['authors']}]\n{match['text']}"
+        for match in matches
+    ]
+    contextStr = "\n\n---\n\n".join(contextBlocks)
+
+    # edit the prompt to your likings lol
+    systemPrompt = (
+        "You  are the sarcastic, deadpan server historian for this private friend group."
+        "Answer the user's question using ONLY the retrieved Discord chat logs below."
+        "Cite who said what and when. Do not make up events if the logs don't support it."
+    )
+
+    response = genai_client.models.generate_content(
+        model="gemini-3.8-flash",
+        contents=f"[RETRIEVED CHAT LOGS]"
+        config=types.GenerateContentConfig(
+            system_instruction=systemPrompt,
+            temperature=0.4, 
+        )
+    )
+    return response.text
+
+if __name__ == "__main__":
+    build_vector_db()
+
+    print("\n--- Sample Search ---")
+    while True:
+        q = input("\n Ask a question (or type 'q' to quit): ").strip()
+        if not q or q.lower() == 'q':
+            break
+        print("\nSearching for relevant chat logs...")
+        answer = ask(q)
+        print("\n" + "=" * 60)
+        print(answer)
+        print("=" * 60)
