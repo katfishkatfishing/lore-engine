@@ -1,20 +1,22 @@
 import os
 import json
 import time
+import random
 from pathlib import Path
 from dotenv import load_dotenv
 import chromadb
-from chrommadb import Documents, EmbeddingFunction, Embeddings
+from chromadb import Documents, EmbeddingFunction, Embeddings
 from google import genai
 from google.genai import types
 
 load_dotenv()  # Load environment variables from .env file
 
 # paths
-CHUNKS_FILE = Path("data/clean/lore_chunks.json")
-CHROMA_DIR = Path("data/chromadb")
+BASE_DIR = Path(__file__).resolve().parent.parent
+CHUNKS_FILE = BASE_DIR / "data" / "cleaned" / "organisedGoesHere.json"
+CHROMA_DIR = BASE_DIR / "data" / "chromadb"
 COLLECTION_NAME = "buku_teks_sejarah"
-BATCH_SIZE = 100
+BATCH_SIZE = 85
 
 # initialise 
 api_key = os.getenv("GEMINI_API_KEY")
@@ -34,7 +36,7 @@ class GeminiEmbeddingFunction(EmbeddingFunction):
         response = genai_client.models.embed_content(
             model="gemini-embedding-001",
             contents=input,
-            config=types.EmbedContentCOnfig(
+            config=types.EmbedContentConfig(
                 task_type=self.task_type,
                 output_dimensionality=768
             )
@@ -44,10 +46,10 @@ class GeminiEmbeddingFunction(EmbeddingFunction):
 def get_collection(is_query: bool = False):
     """Returns the chromadb collection wired to gemini"""
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-    client = chromadb.PersistantClient(path=str(CHROMA_DIR))
+    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
     # use query when searching, retrieval when indexing
-    task = "RETRIEVAL_DOCUMENT" if is_query else "RETRIEVAL_DOCUMENT"
+    task = "RETRIEVAL_QUERY" if is_query else "RETRIEVAL_DOCUMENT"
 
     return client.get_or_create_collection(
         name=COLLECTION_NAME,
@@ -94,27 +96,32 @@ def build_vector_db():
         endIndex = min(startIndex + BATCH_SIZE, total)
         print(f"Indexed {endIndex}/{total} chunks...")
 
-        time.sleep(0.5)  # slight delay to avoid overwhelming the API
+        if endIndex < total:
+            print("adding a delay to avoid overwhelming the API...")
+            time.sleep(62)  # slight delay to avoid overwhelming the API
 
     print(f"Successfully indexed {collection.count()} chunks into chromadb.")
 
 def search(query: str, top_k: int = 4) -> list[dict]:
     """Embeds the user's question via gemini and retrieves the closest chat logs"""
     collection = get_collection(is_query=True)
-    if collection.count() == 0:
+    total_count = collection.count()
+    
+    if total_count == 0:
         return []
 
-    results = collection.query(query_texts=[query], n_results=top_k)
-    formatted = []
+    pool_size = min(top_k * 3, total_count)
+    results = collection.query(query_texts=[query], n_results=pool_size)
 
     if not results["documents"] or not results["documents"][0]:
-        return formatted
+        return []
 
+    candidates = []
     # Format the results
     for i in range(len(results["documents"][0])):
         meta = results["metadatas"][0][i]
-        distance = results["distance"][0][i]
-        formatted.append({
+        distance = results["distances"][0][i]
+        candidates.append({
             "id": results["ids"][0][i],
             "score": round(1 - distance, 4),  # convert distance to similarity score
             "channel": meta["channel"],
@@ -122,36 +129,15 @@ def search(query: str, top_k: int = 4) -> list[dict]:
             "authors": meta["authors"],
             "text": results["documents"][0][i],
         })
-    return formatted
 
-def ask(question: str) -> str:
-    """Full RAG pipeline, retrieves top chat chunks and generates an answer using ai"""
-    matches = search(question, top_k=4)
-    if not matches:
-        return "I do not recall any relevant information."
+    if len(candidates) <= top_k:
+        return candidates
 
-    contextBlocks = [
-        f"[{match['time']} | #{match['channel']} | {match['authors']}]\n{match['text']}"
-        for match in matches
-    ]
-    contextStr = "\n\n---\n\n".join(contextBlocks)
+    best_matches = candidates[:3]
+    remaining_candidates = candidates[3:]
+    diverse_picks = random.sample(remaining_candidates, min(top_k - 3, len(remaining_candidates)))
 
-    # edit the prompt to your likings lol
-    systemPrompt = (
-        "You  are the sarcastic, deadpan server historian for this private friend group."
-        "Answer the user's question using ONLY the retrieved Discord chat logs below."
-        "Cite who said what and when. Do not make up events if the logs don't support it."
-    )
-
-    response = genai_client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=f"[RETRIEVED CHAT LOGS]"
-        config=types.GenerateContentConfig(
-            system_instruction=systemPrompt,
-            temperature=0.4, 
-        )
-    )
-    return response.text
+    return best_matches + diverse_picks
 
 if __name__ == "__main__":
     build_vector_db()

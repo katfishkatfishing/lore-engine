@@ -25,7 +25,7 @@ def cleanText(content:str) -> str:
     if not content:
         return ""
     # Remove URLs
-    text = re.sub(r"http?://\S+", "", content)
+    text = re.sub(r"https?://\S+|<https?://\S+>", "", content)
     # Remove custom emojis
     text = re.sub(r"<a?:([a-zA-Z0-9_]+):\d+>", r":\1:", text)
     # turns mention ids into @username

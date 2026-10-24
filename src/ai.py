@@ -1,5 +1,6 @@
 from google.genai import types
 from src.database import genai_client, search
+from collections import deque
 
 SYSTEM_PROMPT = """
 You are the sarcastic, deadpan server historian for this private friend group.
@@ -7,10 +8,13 @@ Answer the user's question using ONLY the retrieved Discord chat logs below.
 Cite who said what and when. Do not make up events if the logs don't support it.
 """
 
-def ask(question: str, mode: str ="auto", top_k = 5) -> dict:
+CHAT_HISTORY = deque(maxlen=5)  # Store the last 5 questions and answers
+
+def ask(question: str, mode: str ="auto", top_k = 8) -> dict:
     """Queries the database for relevant chat logs and generates a response using Gemini AI. Returns answer and sources."""
 
-    matches = search(question, top_k=top_k)
+    search_query = f"{CHAT_HISTORY[-1]['question']} {question}" if CHAT_HISTORY else question
+    matches = search(search_query, top_k=top_k)
 
     if not matches:
         return {
@@ -29,23 +33,32 @@ def ask(question: str, mode: str ="auto", top_k = 5) -> dict:
     if mode and mode.lower() != "auto":
         mode_instruction = f"\n Respond specifically in {mode.upper()} MODE.\n"
 
+    recent_context = "\n".join([
+        f"User: {item['question']}\nAi: {item['answer']}" for item in CHAT_HISTORY
+    ]) if CHAT_HISTORY else "None yet."
+
     prompt = (
         f"[RETRIEVED CHAT LOGS]\n\n{contextStr}\n\n"
-        f"User's question: {question}\n"
+        f"[RECENT CONVERSATION WITH YOU]\n"
+        f"User's current question: {question}\n"
         f"{mode_instruction}"
     )
 
 
     try:
         response = genai_client.models.generate_content(
-            model="gemini-3.8-flash",
+            model="gemini-3.5-flash-lite",
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
                 temperature=0.45, 
+                max_output_tokens=1500
             )
         )
         answer = response.text
+
+        CHAT_HISTORY.append({"question": question, "answer": answer})
+
     except Exception as e:
         answer = f"An error occurred while generating the response: {str(e)}"
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from src.ai import ask
 from src.database import search
 
-CHUNKS_FILE = Path("data/clean/lore_chunks.json")
+CHUNKS_FILE = Path("data/cleaned/lore_chunks.json")
 
 app = FastAPI(
     title="Lore Engine API",
@@ -31,7 +31,7 @@ class AskRequest(BaseModel):
     mode: Optional[str] = "auto" 
     top_k: Optional[int] = 5
 
-def load_chunks() -> list[dist]:
+def load_chunks() -> list[dict]:
     if not CHUNKS_FILE.exists():
         return[]
     with open(CHUNKS_FILE, "r", encoding="utf-8") as f:
