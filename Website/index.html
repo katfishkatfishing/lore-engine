@@ -263,21 +263,30 @@
 
         <!-- Live Lore -->
          <section id="ticker" class="max-w-6xl mx-auto py-16 px-6">
-            <div id="live-lore-terminal" class="bg-black border-2 border-green-500/80 p-8 font-mono text-green-400 text-lg neon-glow-green pixel-box">
-                <div class="flex justify-between border-b border-green-900 pb-3 mb-4 text-sm text-green-600">
-                    <span>
-                        LORE-ENGINE TERMINAL V1.0 // LIVE FEED
-                    </span>
-                    <span>
-                        STATUS: WAITING FOR BACKEND...
-                    </span>
-                </div>
-                <p class="text-xl mb-2">
-                    >> [SYSTEM] Initializing live connection to localhost:8000...
-                </p>
-                <p class="animate-pulse text-green-300">
-                    _
-                </p>
+            <div class="relative bg-black border-2 border-green-500/80 p-8 font-mono text-green-400 text-lg neon-glow-green pixel-box overflow-hidden">
+
+                <!-- Pixel Overlay Effect -->
+                 <div class="absolute inset-0 pixel-scanlines z-20">
+                 </div>
+
+                <!-- Terminal Stuff -->
+                 <div id="live-lore-terminal" class="relative z-20">
+                    <div class="flex justify-between border-b border-green-900 pb-3 mb-4 text-sm text-green-600">
+                        <span>
+                            LORE-ENGINE TERMINAL V1.0 // LIVE FEED
+                        </span>
+                        <span>
+                            STATUS: CONNECTING TO BACKEND...
+                        </span>
+                    </div>
+                    <p class="text-xl mb-2">
+                        >> [SYSTEM] Initializing live connection to localhost:8000...
+                    </p>
+                    <p class="text-xl font-bold font-mono text-green-400">
+                        > <span class="terminal-cursor">_</span>
+                    </p>
+                 </div>
+
             </div>
          </section>
 

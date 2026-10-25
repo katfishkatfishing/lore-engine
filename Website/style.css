@@ -15,18 +15,34 @@ body {
     font-family: var(--font-body);
     font-size: 1.25rem;
 
-    /* Dreamy Background */
+    /* Live Wallpaper */
     background-color: #0c091f;
     background-image:
-        radial-gradient(at 15% 20%, rgba(88, 28, 135, 0.5) 0px, transparent 50%),
-        radial-gradient(at 85% 15%, rgba(219, 39, 119, 0.4) 0px transparent 50%),
-        radial-gradient(at 50% 85%, rgba(124, 58, 237, 0.45) 0px, transparent 50%);
+        radial-gradient(at 15% 20%, rgba(88, 28, 135, 0.6) 0px, transparent 50%),
+        radial-gradient(at 85% 15%, rgba(219, 39, 119, 0.5) 0px transparent 50%),
+        radial-gradient(at 50% 85%, rgba(124, 58, 237, 0.55) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, rgba(0, 240, 255, 0.3) 0px, transparent 50%);
     background-attachment: fixed;
-    background-repeat: no-repeat;
+    background-size: 200% 200%;
+    animation: liveWallpaperShift 18s ease infinite alternate;
 
     image-rendering: pixelated;
     color: #ffffff;
 }
+
+/* Background thing */
+@keyframes liveWallpaperShift {
+    0% {
+        background-position: 0% 0%;
+    }
+    50% {
+        background-position: 100% 60%;
+    }
+    100% {
+        background-position: 40% 100%;
+    }
+}
+
 
 h1, h2, h3, .pixel-heading {
     font-family: var(--font-heading);
@@ -202,7 +218,7 @@ h1, h2, h3, .pixel-heading {
     animation: bouncePixel 1.5s infinite;
 }
 
-/* cta button fix */
+/* cta button */
 .hero-cta-button {
     display: inline-block;
     cursor: pointer !important;
@@ -214,4 +230,24 @@ h1, h2, h3, .pixel-heading {
     transform: scale(1.08) translateY(-2px) !important;
     background-color: #083344 !important; /* cyan-900 */
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.8), 0 0 30px rgba(0, 240, 255, 0.4) !important;
+}
+
+/* Retro CRT Terminal Blinking Cursor */
+.terminal-cursor {
+    display: inline-block;
+    color: #39ff14;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(57, 255, 20, 0.9), 0 0 15px rgba(57, 255, 20, 0.6);
+    animation: crtBlink 0.9s steps(1) infinite;
+}
+
+@keyframes crtBlink {
+    0%, 100% {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(57, 255, 20, 1), 0 0 20px rgba(57, 255, 20, 0.8);
+    }
+    50% {
+        opacity: 0;
+        text-shadow: none;
+    }
 }
