@@ -1,0 +1,217 @@
+/* style.css */
+
+/* Smooth scrolling transitions */
+html {
+    scroll-behavior: smooth;
+}
+
+/* VT323 Font */
+:root {
+    --font-heading: 'Press Start 2P', monospace;
+    --font-body: 'VT323', monospace;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+
+    /* Dreamy Background */
+    background-color: #0c091f;
+    background-image:
+        radial-gradient(at 15% 20%, rgba(88, 28, 135, 0.5) 0px, transparent 50%),
+        radial-gradient(at 85% 15%, rgba(219, 39, 119, 0.4) 0px transparent 50%),
+        radial-gradient(at 50% 85%, rgba(124, 58, 237, 0.45) 0px, transparent 50%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+
+    image-rendering: pixelated;
+    color: #ffffff;
+}
+
+h1, h2, h3, .pixel-heading {
+    font-family: var(--font-heading);
+}
+
+/* Borders */
+.pixel-box {
+    border: 4px solid #30363d;
+    border-radius: 2px;
+    background: rgba(13, 17, 23, 0.8);
+}
+
+/* Neon Glows */
+.neon-glow-cyan {
+    border: 2px solid #00f0ff;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.neon-glow-magenta {
+    border: 2px solid #ff007f;
+    box-shadow: 0 0 10px rgba(255, 0, 127, 0.5), 0 0 20px rgba(255, 0, 127, 0.2);
+}
+
+.neon-glow-green {
+    border: 2px solid #39ff14;
+    box-shadow: 0 0 10px rgba(57, 255, 20, 0.5), 0 0 20px rgba(57, 255, 20, 0.2);
+}
+
+/* RGB Animation */
+.rgb-border-cycle {
+    animation: rgbCycle 4s linear infinite;
+}
+
+@keyframes rgbCycle {
+    0% {
+        border-color: #ff0055;
+        box-shadow: 0 0 12px rgba(255, 0, 85, 0.6);
+    }    
+    33% {
+        border-color: #00f0ff;
+        box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+    }    
+    66% {
+        border-color: #39ff14;
+        box-shadow: 0 0 12px rgba(57, 255, 20, 0.6);
+    }    
+    100% {
+        border-color: #ff0055;
+        box-shadow: 0 0 12px rgba(255, 0, 85, 0.6);
+    }    
+}
+
+/* RGB Wave Title Effect */
+.minecraft-rainbow-glint {
+    background: linear-gradient(
+        90deg,
+        #ff0055, #ffae00, #39ff14, #00f0ff, #7c3aed, #ff0055
+    );
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: rainbowGlint 4s linear infinite;
+}
+
+@keyframes rainbowGlint {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+}
+
+/* Hero Section */
+.hero-fullscreen {
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+    overflow-y: visible;
+}
+
+/* Pixel Grid Overlay Effect */
+.pixel-scanlines {
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.25) 50%
+    ), linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.03),
+        rgba(0, 255, 0, 0.01),
+        rgba(0, 0, 255, 0.03)
+    );
+    background-size: 100% 4px, 6px 100%;
+    pointer-events: none;
+}
+
+/* Floaty Discord Chat Bubbles */
+.discord-chat-bubble {
+    position: absolute;
+    background-color: #313338;
+    border: 2px solid #2b2d31;
+    padding: 12px 16px;
+    font-family: 'gg sans', 'Helvetica Neue', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #dbdee1;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 10;
+    opacity: 0.65;
+    cursor: default;
+}
+
+
+.discord-tag {
+    background-color: #2b2d31;
+    color: #f2f3f5;
+    font-size: 0.85rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    cursor: default;
+}
+
+.discord-reaction-box {
+    background-color: #2b2d31;
+    border: 1px solid #3f4147;
+    border-radius: 8px;
+    padding: 3px 7px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #dbdee1;
+    cursor: default;
+}
+
+.discord-reaction-box.active {
+    background-color: #353c65;
+    border-color: #5865f2;
+    cursor: default;
+}
+
+.discord-add-reaction {
+    background-color: #2b2d31;
+    border: 1px solid #3f4147;
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+
+/* Random Rotation for Discord Chat Bubbles */
+.rotate-casual-left-sm { transform: rotate(-3deg); }
+.rotate-casual-right-sm { transform: rotate(4deg); }
+.rotate-casual-left-lg { transform: rotate(-6deg); }
+.rotate-casual-right-lg { transform: rotate(5deg); }
+
+/* Scrolling Thing */
+@keyframes bouncePixel{
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(10px);}
+}
+
+.scroll-indicator {
+    animation: bouncePixel 1.5s infinite;
+}
+
+/* cta button fix */
+.hero-cta-button {
+    display: inline-block;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hero-cta-button:hover {
+    transform: scale(1.08) translateY(-2px) !important;
+    background-color: #083344 !important; /* cyan-900 */
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.8), 0 0 30px rgba(0, 240, 255, 0.4) !important;
+}

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lore Engine</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="text-slate-100 antialiased selection:bg-cyan-500 selection:text-black bg-slate-950">
+    
+    <!-- Navigation Overlay -->
+     <nav class="fixed top-0 left-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b-2 border-slate-800/80 px-4 md:px-6 py-3 md:py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+
+            <!-- Narbar Logo -->
+             <div id="nav-logo" class="text-base md:text-xl text-cyan-400 flex items-center gap-2 font-bold tracking-wider opacity-0 transition-opacity duration-300">
+                <img class="w-10 h-10 rounded-full border-2 object-cover" style="image-rendering:auto;" src="assets/ClockGear.jpg" alt="Icon">
+                <span class="pixel-heading hidden sm:inline" style="text-indent: 10px;">LORE ENGINE</span>
+             </div>
+
+            <!-- Smooth Scroll to Content -->
+             <div class="flex space-x-3 md:space-x-8 text-base md:text-xl">
+                <a href="#mechanics" class="hover:text-cyan-400 transition-colors truncate">[MECHANICS]</a>
+                <a href="#ticker" class="hover:text-cyan-400 transition-colors truncate">[LIVE LORE]</a>
+                <a href="#hall" class="hover:text-cyan-400 transition-colors truncate">[MEMORY LANE]</a>
+             </div>
+             <a href="#" class="rgb-border-cycle bg-slate-900 border-2 px-3 py-1.5 md:px-4 md:py-2 text:xs md:text-sm text-white hover:scale-105 cursor:pointer transition-transform pixel-heading text-center">
+                INVITE BOT
+             </a>
+
+        </div>
+     </nav>
+
+    <!-- Hero Section -->
+     <header class="hero-fullscreen relative text-center px-6">
+
+        <!-- Pixel Overlay Effect -->
+         <div class="absolute inset-0 pixel-scanlines z-20">
+         </div>
+        
+        <!-- Floating Discord Chat Bubbles -->
+         <div class="absolute inset-0 overflow-hidden">
+            
+            <!-- Floating Quote 1 -->
+             <div class="discord-chat-bubble top-28 md:top-32 left-6 md:left-16 lg:left-28 max-w-sm rotate-casual-left-lg hidden sm:block">
+                <div class="flex items-start gap-3">
+                    
+                    <!-- Avatar -->
+                     <div class="relative flex-shrink-0">
+                        <img src="https://cdn.discordapp.com/avatars/819022649774309377/5f7f16f443b6399be659b5aeb7381fd9.png" class="w-10 h-10 rounded-full bg-slate-700 object-cover" style="image-rendering:auto;" alt="PoTeto">
+                     </div>
+
+                     <div class="flex-1 min-w-0 text-left">
+
+                        <!-- Username + Badge + Timestamp -->
+                         <div class="flex items-baseline justify-between gap-2 mb-1">
+                            <span class="font-semibold text-white text-lg leading-none truncate">
+                                PoTeto
+                            </span>
+                            <span class="discord-tag">
+                                <img class="w-3.5 h-3.5 object-contain" style="image-rendering:auto;" src="assets/serverTag/TETO_server_tag.png">
+                                TETO
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-mono ml-auto flex-shrink-0">
+                                22/10/2026 04:12
+                            </span>
+                         </div>
+
+                        <!-- Message Content -->
+                         <p class="text-sm text-slate-200 font-normal mb-2 leading-relaxed">
+                            Did you say food?
+                         </p>
+
+                        <!-- Reactions -->
+                         <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <div class="discord-reaction-box">
+                                <span>✅</span>
+                                <span class="font-semibold text-xs text-[#c9cdfb]">1</span>
+                            </div>
+                            <div class="discord-add-reaction text-slate-400 flex items-center justify-center">
+                                <img class="w-5 h-5 object-contain" style="image-rendering:auto;" src="assets/discordReactionIcon.png" alt="Add reaction">
+                            </div>
+                         </div>
+
+                     </div>
+
+                </div>
+             </div>
+
+            <!-- Floating Quote 2 -->
+             <div class="discord-chat-bubble top-28 md:top-32 right-6 md:right-16 lg:right-28 max-w-sm rotate-casual-right-lg hidden sm:block">
+                <div class="flex items-start gap-3">
+                    
+                    <!-- Avatar -->
+                     <div class="relative flex-shrink-0">
+                        <img src="https://cdn.discordapp.com/avatars/855638249770844220/f470567e54ab4c069bfcb889806e977c.png" class="w-10 h-10 rounded-full bg-slate-700 object-cover" style="image-rendering:auto;" alt="thePhantom">
+                     </div>
+
+                     <div class="flex-1 min-w-0 text-left">
+
+                        <!-- Username + Badge + Timestamp -->
+                         <div class="flex items-baseline justify-between gap-2 mb-1">
+                            <span class="font-semibold text-white text-lg leading-none truncate">
+                                ✴⸜(˃ ᵕ ˂ )⸝♡𝓟𝓱𝓪𝓷𝓽𝓸𝓶𝓹𝔁⸜
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-mono ml-auto flex-shrink-0">
+                                21/10/2026 16:07
+                            </span>
+                         </div>
+
+                        <!-- Message Content -->
+                         <p class="text-sm text-slate-200 font-normal mb-2 leading-relaxed">
+                            Where my hours go
+                         </p>
+
+                     </div>
+
+                </div>
+             </div>
+
+            <!-- Floating Quote 3 -->
+             <div class="discord-chat-bubble bottom-20 md:bottom-24 left-6 md:left-16 lg:left-28 max-w-sm rotate-casual-right-sm hidden sm:block">
+                <div class="flex items-start gap-3">
+                    
+                    <!-- Avatar -->
+                     <div class="relative flex-shrink-0">
+                        <img src="https://cdn.discordapp.com/avatars/670657086253694983/9724669f84bf4e56c3753e481d5bf5fc.png" class="w-10 h-10 rounded-full bg-slate-700 object-cover" style="image-rendering:auto;" alt="theJian">
+                     </div>
+
+                     <div class="flex-1 min-w-0 text-left">
+
+                        <!-- Username + Badge + Timestamp -->
+                         <div class="flex items-baseline justify-between gap-2 mb-1">
+                            <span class="font-semibold text-white text-lg leading-none truncate">
+                                Kath
+                            </span>
+                            <span class="discord-tag">
+                                <img class="w-3.5 h-3.5 object-contain" style="image-rendering:auto;" src="assets/serverTag/LOTM_server_tag.png">
+                                LOTM
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-mono ml-auto flex-shrink-0">
+                                24/10/2026 22:49
+                            </span>
+                         </div>
+
+                        <!-- Message Content -->
+                         <p class="text-sm text-slate-200 font-normal mb-2 leading-relaxed">
+                            talm bout sum calculus<br>
+                            fuh nah
+                         </p>
+
+                     </div>
+
+                </div>
+             </div>
+
+            <!-- Floating Quote 4 -->
+             <div class="discord-chat-bubble bottom-20 md:bottom-24 right-6 md:right-16 lg:right-28 max-w-sm rotate-casual-left-sm hidden sm:block">
+                <div class="flex items-start gap-3">
+                    
+                    <!-- Avatar -->
+                     <div class="relative flex-shrink-0">
+                        <img src="https://cdn.discordapp.com/avatars/835409149956194354/89fe841abe04b76ea46401dfa8e2156d.png" class="w-10 h-10 rounded-full bg-slate-700 object-cover" style="image-rendering:auto;" alt="theGoat">
+                     </div>
+
+                     <div class="flex-1 min-w-0 text-left">
+
+                        <!-- Username + Badge + Timestamp -->
+                         <div class="flex items-baseline justify-between gap-2 mb-1">
+                            <span class="font-semibold text-white text-lg leading-none truncate">
+                                PeeShooter
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-mono ml-auto flex-shrink-0">
+                                16/02/2026 21:15
+                            </span>
+                         </div>
+
+                        <!-- Message Content -->
+                         <p class="text-sm text-slate-200 font-normal mb-2 leading-relaxed">
+                            happy lunar new year
+                         </p>
+
+                     </div>
+
+                </div>
+             </div>
+
+         </div>
+        
+        <!-- Main hero content that transitions when scrolling -->
+         <div id="hero-content" class="relative z-30 max-w-4xl mx-auto transition-all duration-100 ease-out mt-12 flex flex-col items-center">
+            <div class="inline-block bg-slate-900/90 border-2 border-cyan-400 text-cyan-400 px-4 md:px-6 py-2 mb-6 text-base md:text-xl tracking-widest neon-glow-cyan pixel-box">
+                BRIDGING CONNECTIONS
+            </div>
+
+            <!-- Big title for the scroll driven morph animation -->
+             <h1 id="main-hero-title" class="text-4xl md:text-7xl font-extrabold tracking-tight leading-tight mb-8 minecraft-rainbow-glint p-2">
+                LORE ENGINE
+             </h1>
+             <p id="hero-subtext" class="text-xl md:text-3xl text-slate-300 max-w-2xl mx-auto mb-10 bg-slate-950/90 p-6 pixel-box border-slate-700 backdrop-blur-md">
+                Your server's shared braincell.
+             </p>
+             <div id="hero-cta" class="flex flex-wrap justify-center gap-6">
+                <a href="#mechanics" class="neon-glow-cyan bg-cyan-950 text-cyan-300 hover:bg-cyan-900 px-8 py-4 text-sm font-bold transition-all hover:scale-105 cursor-pointer pixel-heading">
+                    START EXPLORING ↓
+                </a>
+             </div>
+         </div>
+
+     </header>
+
+    <!-- Main Content Section -->
+     <main class="relative z-30 bg-slate-950 border-t-4 border-slate-900 pb-24">
+
+        <!-- Mechanics -->
+         <section id="mechanics" class="max-w-6xl mx-auto py-24 px-6">
+            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 p-8 md:p-12">
+
+                <!-- Header -->
+                 <div class="flex items-center gap-3 border-b-2 border-slate-800 pb-6 mb-8">
+                    <span class="text-3xl">⚙️</span>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl text-cyan-400 font-bold">
+                            Features
+                        </h2>
+                        <p class="text-slate-400 text-lg">
+                            The ultimate shared-memory archive for Discord friend groups.
+                        </p>
+                    </div>
+                 </div>
+
+                <!-- Content -->
+                 <div class="space-y-6 text-slate-300">
+                    <div>
+                        <h3 class="text-xl text-white font-bold mb-3">
+                            Introducing the Lore Engine
+                        </h3>
+                        <ul class="list-disc list-inside space-y-3 text-xl text-slate-300 pl-2">
+                            <li><strong class="teext-cyan-400">Chat Archiving:</strong> Automatically indexes server activity and conversation flows to keep your shared memory alive.</li>
+                            <li><strong class="text-pink-400">Quote Vault:</strong> Captures out-of-context masterpieces and funny lines with simple commands.</li>
+                            <li><strong class="text-green-400">Receipt Printer:</strong> Fact-checks server debates instantly by scanning historical logs to prove who said what and when.</li>
+                        </ul>
+                    </div>
+                 </div>
+
+            </div>
+         </section>
+
+        <!-- Live Lore -->
+         <section id="ticker" class="max-w-6xl mx-auto py-16 px-6">
+            <div class="bg-black border-2 border-green-500/80 p-8 font-mono text-green text-lg neon-glow-green pixel-box">
+                <div class="flex justify-between border-b border-green-900 pb-3 mb-4 text-sm text-green-600">
+                    <span>
+                        LORE-ENGINE TERMINAL V1.0 // LIVE FEED
+                    </span>
+                    <span>
+                        STATUS: WAITING FOR BACKEND...
+                    </span>
+                </div>
+                <p class="text-xl mb-2">
+                    >> [SYSTEM] Live feed stream initialized.
+                </p>
+                <p class="text-xl mb-4 text-slate-500">
+                    >> Backend stuff here...
+                </p>
+                <p class="animate-pulse text-green-300">
+                    _
+                </p>
+            </div>
+         </section>
+
+        <!--- Memory Lane -->
+        <section id="hall" class="max-w-6xl mx-auto py-24 px-6 text-center">
+            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 py-16 px-6">
+                <h2 class="text-2xl md:text-3xl text-pink-500 mb-4 pixel-heading">
+                    [ MEMORY LANE ]
+                </h2>
+                <p class="text-slate-400 text-xl max-w-xl mx-auto mb-8">
+                    Gallery is empty.
+                </p>
+                <div class="inline-block bg-slate-950 border border-slate-800 px-6 py-3 text-slate-500 font-mono text-lg">
+                    Connect FastAPI
+                </div>
+            </div>
+        </section>
+
+     </main>
+
+    <!-- Footer -->
+     <footer class="text-center py-12 text-slate-500 text-xl border-t border-slate-800 bg-slate-950">
+        <p>Lore Engine // Crafterd with & for Friends</p>
+     </footer>
+
+<script>
+    window.addEventListener('scroll', function() {
+        const scrollY = window.scrollY;
+        const heroContent = document.getElementById('hero-content');
+        const navLogo = document.getElementById('nav-logo');
+
+        const maxScroll = 400; 
+        const progress = Math.min(scrollY / maxScroll, 1);
+
+        if (scrollY <= maxScroll) {
+            // Animates the entire hero block cleanly without touching individual button inline styles
+            heroContent.style.transform = `translateY(${scrollY * 0.4}px) scale(${1 - progress * 0.15})`;
+            heroContent.style.opacity = 1 - progress * 1.5;
+            
+            navLogo.style.opacity = progress;
+        } else {
+            heroContent.style.opacity = 0;
+            navLogo.style.opacity = 1;
+        }
+    });
+</script>
+</body>
+</html>
