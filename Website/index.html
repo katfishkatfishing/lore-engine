@@ -239,11 +239,19 @@
                 <!-- Content -->
                  <div class="space-y-6 text-slate-300">
                     <div>
-                        <h3 class="text-xl text-white font-bold mb-3">
+                        <h3 class="text-xl text-white font-bold mb-2">
                             Introducing the Lore Engine
                         </h3>
+                        <p class="text-xl leading-relaxed">
+                            Lore Engine is a bot designed to "screenshot" your server's chat history, jokes, and memorable moments so your group never fades away.
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl text-white font-bold mb-3">
+                            Bot Features
+                        </h3>
                         <ul class="list-disc list-inside space-y-3 text-xl text-slate-300 pl-2">
-                            <li><strong class="teext-cyan-400">Chat Archiving:</strong> Automatically indexes server activity and conversation flows to keep your shared memory alive.</li>
+                            <li><strong class="text-cyan-400">Chat Archiving:</strong> Automatically indexes server activity and conversation flows to keep your shared memory alive.</li>
                             <li><strong class="text-pink-400">Quote Vault:</strong> Captures out-of-context masterpieces and funny lines with simple commands.</li>
                             <li><strong class="text-green-400">Receipt Printer:</strong> Fact-checks server debates instantly by scanning historical logs to prove who said what and when.</li>
                         </ul>
@@ -255,7 +263,7 @@
 
         <!-- Live Lore -->
          <section id="ticker" class="max-w-6xl mx-auto py-16 px-6">
-            <div class="bg-black border-2 border-green-500/80 p-8 font-mono text-green text-lg neon-glow-green pixel-box">
+            <div id="live-lore-terminal" class="bg-black border-2 border-green-500/80 p-8 font-mono text-green-400 text-lg neon-glow-green pixel-box">
                 <div class="flex justify-between border-b border-green-900 pb-3 mb-4 text-sm text-green-600">
                     <span>
                         LORE-ENGINE TERMINAL V1.0 // LIVE FEED
@@ -265,10 +273,7 @@
                     </span>
                 </div>
                 <p class="text-xl mb-2">
-                    >> [SYSTEM] Live feed stream initialized.
-                </p>
-                <p class="text-xl mb-4 text-slate-500">
-                    >> Backend stuff here...
+                    >> [SYSTEM] Initializing live connection to localhost:8000...
                 </p>
                 <p class="animate-pulse text-green-300">
                     _
@@ -278,15 +283,17 @@
 
         <!--- Memory Lane -->
         <section id="hall" class="max-w-6xl mx-auto py-24 px-6 text-center">
-            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 py-16 px-6">
+            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 py-16 px-8">
                 <h2 class="text-2xl md:text-3xl text-pink-500 mb-4 pixel-heading">
                     [ MEMORY LANE ]
                 </h2>
-                <p class="text-slate-400 text-xl max-w-xl mx-auto mb-8">
-                    Gallery is empty.
+                <p class="text-slate-400 text-xl max-w-xl mx-auto mb-10">
+                    Archived highlights straight from your server's database logs.
                 </p>
-                <div class="inline-block bg-slate-950 border border-slate-800 px-6 py-3 text-slate-500 font-mono text-lg">
-                    Connect FastAPI
+                <div id="memory-lane-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                    <div class="text-slate-500 font-mono text-center col-span-3 py-8">
+                        // Loading memories from database...
+                    </div>
                 </div>
             </div>
         </section>
@@ -299,6 +306,7 @@
      </footer>
 
 <script>
+    // Scroll stuff
     window.addEventListener('scroll', function() {
         const scrollY = window.scrollY;
         const heroContent = document.getElementById('hero-content');
@@ -317,6 +325,91 @@
             heroContent.style.opacity = 0;
             navLogo.style.opacity = 1;
         }
+    });
+
+    // Fetch Live Lore Terminal Feed from backend
+    async function loadLiveLore() {
+        try {
+            const response = await fetch('http://localhost:8000/api/quotes?limit=3&shuffle=true');
+            if (!response.ok) throw new Error('API offline');
+            
+            const quotes = await response.json();
+            const terminal = document.getElementById('live-lore-terminal');
+            if (!terminal) return;
+
+            terminal.innerHTML = `
+                <div class="flex justify-between border-b border-green-900 pb-3 mb-4 text-sm text-green-600">
+                    <span>LORE-ENGINE TERMINAL v1.0 // LIVE FEED</span>
+                    <span>STATUS: ONLINE (FASTAPI)</span>
+                </div>
+            `;
+
+            quotes.forEach(q => {
+                const author = q.authors && q.authors.length > 0 ? q.authors[0] : 'Unknown';
+                const text = q.text || q.content || 'Archived message chunk...';
+                const p = document.createElement('p');
+                p.className = 'text-xl mb-2 text-green-400 font-mono truncate';
+                p.textContent = `> [${author}]: "${text}"`;
+                terminal.appendChild(p);
+            });
+        } catch (error) {
+            const terminal = document.getElementById('live-lore-terminal');
+            if (terminal) {
+                terminal.innerHTML = `
+                    <div class="flex justify-between border-b border-red-900 pb-3 mb-4 text-sm text-red-600">
+                        <span>LORE-ENGINE TERMINAL v1.0 // LIVE FEED</span>
+                        <span>STATUS: BACKEND OFFLINE</span>
+                    </div>
+                    <p class="text-xl mb-2 text-red-400 font-mono">> [WARNING] Run 'fastapi dev' or 'python src/api.py' to connect backend.</p>
+                `;
+            }
+        }
+    }
+
+    // Fetch Memory Lane Gallery Cards from backend
+    async function loadMemoryLane() {
+        try {
+            const response = await fetch('http://localhost:8000/api/quotes?limit=6&shuffle=true');
+            if (!response.ok) throw new Error('API offline');
+
+            const quotes = await response.json();
+            const grid = document.getElementById('memory-lane-grid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+            quotes.forEach(q => {
+                const authors = q.authors ? q.authors.join(', ') : 'Unknown';
+                const channel = q.channel ? `#${q.channel}` : '#general';
+                const text = q.text || q.content || 'Saved server memory...';
+                
+                const card = document.createElement('div');
+                card.className = 'bg-slate-950 border-2 border-slate-800 p-6 rounded hover:border-cyan-400 transition-colors flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center text-xs text-cyan-400 font-mono mb-3">
+                            <span>${channel}</span>
+                            <span class="text-slate-500">${q.timestamp || ''}</span>
+                        </div>
+                        <p class="text-lg text-slate-200 mb-4 leading-snug">"${text}"</p>
+                    </div>
+                    <div class="text-xs text-pink-400 font-mono mt-2 pt-3 border-t border-slate-900">
+                        — ${authors}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        } catch (error) {
+            const grid = document.getElementById('memory-lane-grid');
+            if (grid) {
+                grid.innerHTML = `<p class="text-slate-500 font-mono col-span-3 text-center">// Error connecting to backend API. Start FastAPI to load gallery.</p>`;
+            }
+        }
+    }
+
+    // Initialize fetches on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        loadLiveLore();
+        loadMemoryLane();
     });
 </script>
 </body>
