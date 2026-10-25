@@ -8,6 +8,8 @@ from pydantic import BaseModel
 
 from src.ai import ask
 from src.database import search
+from src.features import get_trivia
+from src.assessment import generate_stats, CHUNKS_FILE
 
 CHUNKS_FILE = Path("data/cleaned/lore_chunks.json")
 
@@ -118,4 +120,30 @@ def ask_archive(request: AskRequest):
         mode=request.mode or "auto",
         top_k=request.top_k or 5
     )
+    return result
+
+@app.get("/api/game/who-said-it")
+def play_trivia():
+    """Returns a random quote and 4 options for 'Who said it?' trivia game."""
+    result = get_trivia()
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/members")
+def list_members():
+    """returns a list of all unique usernames in the database."""
+    chunks = load_chunks()
+    members = sorted(list(set(author for chunk in chunks for author in chunk.get("authors", []))))
+    return {"members": members}
+
+@app.get("/api/assessment/{username}")
+def get_assessment(
+    username: str,
+    refresh: bool = Query(False, description="Force refresh of cached stats")
+):
+    """returns behavioural stats and psychological evaluation for a given username."""
+    result = generate_stats(username, force_refresh=refresh)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     return result
