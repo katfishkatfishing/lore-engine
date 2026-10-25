@@ -98,8 +98,8 @@ def compute_stats(target_user: str) -> dict:
                     if word not in STOPWORDS:
                         word_counter[word] += 1
 
-            if len(c.get("text", "")) > 80:
-                sample.append(f"[{c['start_time']} | #{c['channel']}]\n{c['text']}")
+            if len(chunk.get("text", "")) > 80:
+                sample.append(f"[{chunk['start_time']} | #{chunk['channel']}]\n{chunk['text']}")
 
         if not user_lines:
             return {}
@@ -120,7 +120,7 @@ def compute_stats(target_user: str) -> dict:
             "night_owl_pct": f"{owl_pct}% (1am-5am)",
             "caps_pct": f"{caps_pct}%",
             "accomplice": top_partner,
-            "top_words": [word forword, _ in word_counter.most_common(6)],
+            "top_words": [word for word, _ in word_counter.most_common(6)],
             "sample_logs": sample[-6:]
         }
 

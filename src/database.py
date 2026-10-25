@@ -8,6 +8,7 @@ import chromadb
 from chromadb import Documents, EmbeddingFunction, Embeddings
 from google import genai
 from google.genai import types
+from ai import ask
 
 load_dotenv()  # Load environment variables from .env file
 

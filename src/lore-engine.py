@@ -8,6 +8,9 @@ from chromadb.utils import embedding_functions
 import sqlite3
 import re
 from datetime import datetime, timedelta
+from ai import ask
+from features import get_trivia
+from assessment import generate_stats
 
 
 # clean up Hugging Face warning spam in terminal
@@ -515,6 +518,80 @@ async def leaderboard(interaction: discord.Interaction):
     except Exception as e:
         print(f"Leaderboard crash: {e}")
         await interaction.followup.send(f"❌ leaderboard crashed! Check bot terminal: `{e}`")
+
+
+# 8. /ask
+@bot.tree.command(name="ask", description="Ask the Librarian a question about the server history!")
+@app_commands.describe(question="What do you want to know?")
+async def ask_lore(interaction: discord.Interaction, question: str):
+    await interaction.response.defer()
+
+    try:
+        # call gemini RAG function from ai.py
+        result = ask(question)
+
+        response = f"**Q: {question}**\n\n{result['answer']}"
+        await interaction.followup.send(response)
+    except Exception as e:
+        await interaction.followup.send(f"❌ More credits maybe lol?: `{e}`")
+
+
+# 9./trivia
+@bot.tree.command(name="trivia", description="Play a game of 'Who said it?'")
+async def trivia(interaction: discord.Interaction):
+    await interaction.response.defer()
+
+    try:
+        # generate trivia from features.py
+        game = get_trivia()
+
+        if "error" in game:
+            await interaction .followup.send("❌ Not enough data to play trivia yet!")
+            return
+            
+        options_text = "\n".join([f"• {opt}" for opt in game['options']])
+        
+        response = f"🧠 **Who said this?**\n*{game['hint']['date']} in {game['hint']['channel']}*\n\n"
+        response += f"**\"{game['question'].replace('Who said: ', '').strip('\"')}\"**\n\n"
+        response += f"**Options:**\n{options_text}\n\n"
+        response += f"*(Spoiler alert)* ||**Answer:** {game['correct_answer']}||"
+
+        await interaction.followup.send(response)
+    except Exception as e:
+        await interaction.followup.send(f"❌ Trivia broke: `{e}`")
+
+
+
+# 10. /assess
+@bot.tree.command(name="assess", description="Get a psychological evaluation of a server member")
+async def assess(interaction: discord.Interaction, target: discord.User):
+    await interaction.response.defer()
+
+    try:
+        # call evaluation from assessment.py
+        stats = generate_stats(target.display_name)
+
+        if "error" in stats:
+            await interaction.followup.send(f"❌ I don't have enough data on {target.mention} to judge them.")
+            return
+            
+        embed = discord.Embed(title=f"📋 Psychological Dossier: {stats['subject']}", color=discord.Color.dark_purple())
+        
+        metrics_text = (
+            f"🕒 **Peak Activity:** {stats['metrics']['peak_hour']}\n"
+            f"🦉 **Night Owl Rate:** {stats['metrics']['night_owl_pct']}\n"
+            f"🗯️ **Rage Rate (Caps):** {stats['metrics']['caps_pct']}\n"
+            f"🤝 **Primary Accomplice:** {stats['metrics']['accomplice']}\n"
+            f"🗣️ **Overused Words:** {', '.join(stats['metrics']['top_words'])}"
+        )
+
+        embed.add_field(name="Behavioral Metrics", value=metrics_text, inline=False)
+        embed.add_field(name="The Librarian's Verdict", value=stats['evaluation'], inline=False)
+        
+        await interaction.followup.send(embed=embed)
+    except Exception as e:
+        await interaction.followup.send(f"❌ Assessment failed: `{e}`")
+
 
 # start the bot
 bot.run(TOKEN)
