@@ -552,7 +552,9 @@ async def trivia(interaction: discord.Interaction):
         options_text = "\n".join([f"• {opt}" for opt in game['options']])
         
         response = f"🧠 **Who said this?**\n*{game['hint']['date']} in {game['hint']['channel']}*\n\n"
-        response += f"**\"{game['question'].replace('Who said: ', '').strip('\"')}\"**\n\n"
+        clean_quote = game['question'].replace('Who said: ', '').strip('"')
+
+        response += f"**\"{clean_quote}\"**\n\n"
         response += f"**Options:**\n{options_text}\n\n"
         response += f"*(Spoiler alert)* ||**Answer:** {game['correct_answer']}||"
 
@@ -564,33 +566,36 @@ async def trivia(interaction: discord.Interaction):
 
 # 10. /assess
 @bot.tree.command(name="assess", description="Get a psychological evaluation of a server member")
-async def assess(interaction: discord.Interaction, target: discord.User):
+async def assess(interaction: discord.Interaction, user: discord.Member):
     await interaction.response.defer()
+
+    target_username = user.name
 
     try:
         # call evaluation from assessment.py
-        stats = generate_stats(target.display_name)
+        report = generate_stats(target_username)
 
-        if "error" in stats:
-            await interaction.followup.send(f"❌ I don't have enough data on {target.mention} to judge them.")
+        if "error" in report:
+            await interaction.followup.send(f"❌ I don't have enough data on {user.mention} to judge them.")
             return
             
         embed = discord.Embed(title=f"📋 Psychological Dossier: {stats['subject']}", color=discord.Color.dark_purple())
-        
-        metrics_text = (
-            f"🕒 **Peak Activity:** {stats['metrics']['peak_hour']}\n"
-            f"🦉 **Night Owl Rate:** {stats['metrics']['night_owl_pct']}\n"
-            f"🗯️ **Rage Rate (Caps):** {stats['metrics']['caps_pct']}\n"
-            f"🤝 **Primary Accomplice:** {stats['metrics']['accomplice']}\n"
-            f"🗣️ **Overused Words:** {', '.join(stats['metrics']['top_words'])}"
-        )
 
-        embed.add_field(name="Behavioral Metrics", value=metrics_text, inline=False)
-        embed.add_field(name="The Librarian's Verdict", value=stats['evaluation'], inline=False)
+
+        stats = report["metrics"]
         
-        await interaction.followup.send(embed=embed)
+        response = f"🧠 **Psychological Profile: {report['subject']}**\n"
+        response += f"📊 **Lines Analyzed:** {stats['total_lines_indexed']} | **Avg Length:** {stats['avg_line_length']} chars\n"
+        response += f"🤬 **RAGE Rate:** {stats['caps_pct']}\n"
+        response += f"🗣️ **Overused Words:** {', '.join(stats['top_words'])}\n\n"
+        response += f"**Evaluation:**\n{report['evaluation']}"
+
+        await interaction.followup.send(response)
+        
     except Exception as e:
-        await interaction.followup.send(f"❌ Assessment failed: `{e}`")
+        await interaction.followup.send(f"❌ Assessment broke: `{e}`")
+
+
 
 
 # start the bot

@@ -1,80 +1,71 @@
-import json
 import random
-import re
-from collections import Counter
-from pathlib import Path
-from google.genai import types
+import json
+from database import get_collection
 
-from src.database import genai_client, search
-from src.ai import SYSTEM_PROMPT
-
-CHUNKS_FILE = Path(__file__).parent / "organisedGoesHere.json"
-CACHE_FILE = Path("data/cleaned/cache.json")
-
-TRIVIA_IGNORED = {
-    "lol", "lmao", "ok", "okay", "yes", "yea", "yeah", "no", "nah", "nope", "wait"
-}
+TRIVIA_IGNORED = {"lol", "lmao", "ok", "okay", "yes", "yea", "yeah", "no", "nah", "nope", "wait"}
 
 def get_trivia() -> dict:
-    """ scans chunks for quotes that are suitable for trivia questions. Generates a 4 option mcq of 'Who said it?"""
+    """Scans the live ChromaDB archive for suitable trivia quotes."""
+    collection = get_collection()
+    results = collection.get()
 
-    if not CHUNKS_FILE.exists():
-        return {"error": "Chunks file not found."}
+    if not results or not results.get("documents"):
+        return {"error": "No quotes found in the archive yet."}
 
-    with open(CHUNKS_FILE, "r", encoding="utf-8") as f:
-        chunks = json.load(f)
+    docs = results["documents"]
+    metas = results["metadatas"]
+    ids = results["ids"]
 
     all_authors = set()
     candidate_quotes = []
 
-    for chunk in chunks:
-        for author in chunk.get("authors", []):
-            all_authors.add(author)
+    # Parse live ChromaDB documents
+    for i in range(len(docs)):
+        quote = docs[i].strip()
+        meta = metas[i] if metas and metas[i] else {}
+        
+        # Safety net: Convert string metadata to dictionary
+        if isinstance(meta, str):
+            try:
+                meta = json.loads(meta.replace("'", '"'))
+            except:
+                meta = {}
+                
+        author = meta.get("messager_name", "Unknown User")
+        channel = meta.get("channel", "general")
+        
+        all_authors.add(author)
 
-        lines = chunk.get("text", "").split("\n")
-        for line in lines:
-            if ": " not in line:
-                continue
-            speaker, quote = line.split(": ", 1)
-            spoken_text = spoken_text.strip()
+        if not (15 <= len(quote) <= 180) or quote.lower() in TRIVIA_IGNORED:
+            continue
 
-            if not (35 <= len(spoken_text) <= 180):
-                continue
-            if spoken_text.lower() in TRIVIA_IGNORED:
-                continue
+        candidate_quotes.append({
+            "quote": quote,
+            "author": author,  
+            "channel": channel,
+            "chunk_id": ids[i]
+        })
 
-            candidate_quotes.append({
-                "quote": spoken_text,
-                "correct_author": speaker,
-                "timestamp": chunk.get("start_time", "Unknown Date"),
-                "channel": chunk.get("channel",  "general"),
-                "chunk_id": chunk.get("chunk_id"),
-                "full_context": chunk.get("text")
-            })
+    if not candidate_quotes:
+        return {"error": "Not enough suitable quotes found for trivia yet."}
 
-        if not candidate_quotes:
-            return {"error": "No suitable quotes found for trivia."}
+    picked = random.choice(candidate_quotes)
+    correct = picked["author"]
 
-        picked = random.choice(candidate_quotes)
-        correct = picked["correct_author"]
+    # Generate wrong answers from the live author list
+    other_authors = list(all_authors - {correct})
+    wrong_authors = random.sample(other_authors, min(3, len(other_authors)))
 
-        other_authors = [author for author in all_authors if author != correct]
-        wrong_authors = random.sample(other_authors, min(3, len(other_authors)))
+    options = wrong_authors + [correct]
+    random.shuffle(options)
 
-        options = wrong_authors + [correct]
-        random.shuffle(options)
-
-        return {
-            "question_id": picked["chunk_id"],
-            "question": f'Who said: "{picked["quote"]}"',
-            "options": options,
-            "correct_answer": correct,
-            "hint": {
-                "channel": f"Channel: #{picked['channel']}",
-                "date": f"Date: {picked['timestamp']}",
-            },
-            "context": {
-                "timestamp": picked["timestamp"],
-                "full_convo": picked["full_context"]
-            }
+    return {
+        "question_id": picked["chunk_id"],
+        "question": f'Who said: "{picked["quote"]}"',
+        "options": options,
+        "correct_answer": correct,
+        "hint": {
+            "channel": f"#{picked['channel']}",
+            "date": "Recent"
         }
+    }
