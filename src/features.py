@@ -8,7 +8,7 @@ from google.genai import types
 from src.database import genai_client, search
 from src.ai import SYSTEM_PROMPT
 
-CHUNKS_FILE = Path(__file__).parent / "organisedGoesHere.json"
+CHUNKS_FILE = Path(__file__).parent / "data" / "cleaned" / "organisedGoesHere.json"
 CACHE_FILE = Path("data/cleaned/cache.json")
 
 TRIVIA_IGNORED = {
@@ -36,45 +36,45 @@ def get_trivia() -> dict:
             if ": " not in line:
                 continue
             speaker, quote = line.split(": ", 1)
-            spoken_text = spoken_text.strip()
+            quote = quote.strip()
 
-            if not (35 <= len(spoken_text) <= 180):
+            if not (35 <= len(quote) <= 180):
                 continue
-            if spoken_text.lower() in TRIVIA_IGNORED:
+            if quote.lower() in TRIVIA_IGNORED:
                 continue
 
             candidate_quotes.append({
-                "quote": spoken_text,
+                "quote": quote,
                 "correct_author": speaker,
                 "timestamp": chunk.get("start_time", "Unknown Date"),
                 "channel": chunk.get("channel",  "general"),
-                "chunk_id": chunk.get("chunk_id"),
+                "chunk_id": chunk.get("id"),
                 "full_context": chunk.get("text")
             })
 
-        if not candidate_quotes:
-            return {"error": "No suitable quotes found for trivia."}
+    if not candidate_quotes:
+        return {"error": "No suitable quotes found for trivia."}
 
-        picked = random.choice(candidate_quotes)
-        correct = picked["correct_author"]
+    picked = random.choice(candidate_quotes)
+    correct = picked["correct_author"]
 
-        other_authors = [author for author in all_authors if author != correct]
-        wrong_authors = random.sample(other_authors, min(3, len(other_authors)))
+    other_authors = [author for author in all_authors if author != correct]
+    wrong_authors = random.sample(other_authors, min(3, len(other_authors)))
 
-        options = wrong_authors + [correct]
-        random.shuffle(options)
+    options = wrong_authors + [correct]
+    random.shuffle(options)
 
-        return {
-            "question_id": picked["chunk_id"],
-            "question": f'Who said: "{picked["quote"]}"',
-            "options": options,
-            "correct_answer": correct,
-            "hint": {
-                "channel": f"Channel: #{picked['channel']}",
-                "date": f"Date: {picked['timestamp']}",
-            },
-            "context": {
-                "timestamp": picked["timestamp"],
-                "full_convo": picked["full_context"]
-            }
+    return {
+        "question_id": picked["chunk_id"],
+        "question": f'Who said: "{picked["quote"]}"',
+        "options": options,
+        "correct_answer": correct,
+        "hint": {
+            "channel": f"Channel: #{picked['channel']}",
+            "date": f"Date: {picked['timestamp']}",
+        },
+        "context": {
+            "timestamp": picked["timestamp"],
+            "full_convo": picked["full_context"]
         }
+    }

@@ -10,7 +10,7 @@ from google.genai import types
 from src.database import genai_client
 from src.ai import SYSTEM_PROMPT
 
-CHUNKS_FILE = Path(__file__).parent / "organisedGoesHere.json"
+CHUNKS_FILE = Path("data/cleaned/organisedGoesHere.json"
 CACHE_FILE = Path("data/cleaned/cache.json")
 
 # common words ignored 
@@ -31,7 +31,7 @@ STOPWORDS = {
 def load_cache() -> dict:
     if not CACHE_FILE.exists():
         return {}
-    with open(CACHE_FILE, "r", encoding="encoding-utf-8") as f:
+    with open(CACHE_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def save_cache(cache_data: dict):
@@ -66,7 +66,7 @@ def compute_stats(target_user: str) -> dict:
     sample = []
 
     for chunk in chunks:
-        if matched_username in chunk.get("authors", []):
+        if matched_username not in chunk.get("authors", []):
             continue
 
         total_user_lines += 1
@@ -84,7 +84,7 @@ def compute_stats(target_user: str) -> dict:
             if other != matched_username:
                 co_authors[other] += 1
 
-        for line in chunk.get("text", "").split("]n"):
+        for line in chunk.get("text", "").split("\n"):
             if line.startswith(f"{matched_username}: "):
                 msg = line.split(": ", 1)[1].strip()
                 user_lines.append(msg)
@@ -101,28 +101,28 @@ def compute_stats(target_user: str) -> dict:
             if len(chunk.get("text", "")) > 80:
                 sample.append(f"[{chunk['start_time']} | #{chunk['channel']}]\n{chunk['text']}")
 
-        if not user_lines:
-            return {}
+    if not user_lines:
+        return {}
 
-        peak_hour = active_hours.most_common(1)[0][0] if active_hours else 12
-        peak_hour_str = f"{peak_hour:02d}:00 - {peak_hour:02d}:59"
-        top_partner = co_authors.most_common(1)[0][0] if co_authors else ""
-        avg_len = round(sum(len(line) for line in user_lines) / len(user_lines), 1)
-        owl_pct = round((night_owl_counter / max(total_user_lines, 1)) * 100, 1)
-        caps_pct = round((caps_counter / len(user_lines)) * 100, 1)
+    peak_hour = active_hours.most_common(1)[0][0] if active_hours else 12
+    peak_hour_str = f"{peak_hour:02d}:00 - {peak_hour:02d}:59"
+    top_partner = co_authors.most_common(1)[0][0] if co_authors else ""
+    avg_len = round(sum(len(line) for line in user_lines) / len(user_lines), 1)
+    owl_pct = round((night_owl_counter / max(total_user_lines, 1)) * 100, 1)
+    caps_pct = round((caps_counter / len(user_lines)) * 100, 1)
 
-        return {
-            "username": matched_username,
-            "total_lines_indexed": len(user_lines),
-            "total_convos": total_user_lines,
-            "avg_line_length": avg_len,
-            "peak_hour": peak_hour_str,
-            "night_owl_pct": f"{owl_pct}% (1am-5am)",
-            "caps_pct": f"{caps_pct}%",
-            "accomplice": top_partner,
-            "top_words": [word for word, _ in word_counter.most_common(6)],
-            "sample_logs": sample[-6:]
-        }
+    return {
+        "username": matched_username,
+        "total_lines_indexed": len(user_lines),
+        "total_convos": total_user_lines,
+        "avg_line_length": avg_len,
+        "peak_hour": peak_hour_str,
+        "nightowl_pct": f"{owl_pct}% (1am-5am)",
+        "caps_pct": f"{caps_pct}%",
+        "accomplice": top_partner,
+        "top_words": [word for word, _ in word_counter.most_common(6)],
+        "sample_logs": sample[-6:]
+    }
 
 def generate_stats(username: str, force_refresh: bool = False) -> dict:
     """genereates behavioural stats + psychological evaluation. uses local cache unless force_refresh is True."""
@@ -144,7 +144,7 @@ def generate_stats(username: str, force_refresh: bool = False) -> dict:
         f"Write a concise, two-paragraph psychological dossier on '{resolved_name}' based on your observations.\n\n"
         f"[BEHAVIORAL METRICS]\n"
         f"- Peak Active Hour: {stats['peak_hour']}\n"
-        f"- 1AM-5AM Degeneracy Rate: {stats['owl_pct']}\n"
+        f"- 1AM-5AM Degeneracy Rate: {stats['nightowl_pct']}\n"
         f"- ALL CAPS CRASHOUT Rate: {stats['caps_pct']}\n"
         f"- Primary Accomplice: {stats['accomplice']}\n"
         f"- Most Overused Words: {', '.join(stats['top_words'])}\n\n"
