@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src.ai import ask
@@ -147,3 +148,5 @@ def get_assessment(
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
+
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
