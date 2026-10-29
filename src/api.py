@@ -1,13 +1,13 @@
 import json
 import random
-from pathlib import Path
+from pathlib import Path, types
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from src.ai import ask
+from src.ai import SYSTEM_PROMPT, ask
 from src.database import search
 from src.features import get_trivia
 from src.assessment import generate_stats, CHUNKS_FILE
@@ -148,5 +148,66 @@ def get_assessment(
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
+
+
+class TimeRequest(BaseModel):
+    time_period: str
+    channel: Optional[str] = None
+    focus_user: Optional[str] = "Sums the notable events and arguments during this period."
+
+@app.post("/api/lore/timeline")
+def summarise_timeline(request: TimeRequest):
+    """Filters chunks by date and ai track it."""
+    chunks = load_chunks()
+
+    #filter chunks by time
+    matchin_chunks = [
+        chunk for chunk in chunks
+        if chunk.get("start_time", "").startswith(request.time_period.strip())
+    ]
+    if request.channel:
+        matchin_chunks = [c for c in matchin_chunks if request.channel.lower() in c.get("channel", "").lower()]
+
+    if not matchin_chunks:
+        return {
+            "answer":f"Nothing was found for {request.time_period}.",
+            "chunk_count": 0
+        }
+
+    #sample up to 12 chunks
+    ranked_chunks = sorted(matchin_chunks, key=lambda x: x.get("message_count", 0), reverse=True)[:12]
+
+    # resort chunks by start_time
+    ranked_chunks.sort(key=lambda x: x.get("start_time", ""))
+
+    context_blocks = [
+        f"[When: {c['start_time']} | Where: #{c['channel']} | Who: {', '.join(c['authors'])}]\n{c['content']}"
+        for c in ranked_chunks
+    ] 
+
+    context_str = "\n\n---\n\n".join(context_blocks)
+
+    prompt = (
+        f"[CHRONOLOGICAL CHAT LOGS FROM {request.time_period}]\n\n{context_str}\n\n"
+        f"[TASK]\n{request.focus_user}\n"
+        f"Recount what this circle was up to during {req.time_period} in 2 crisp paragraphs, citing specific dates and incidents."
+    )
+
+    response = genai_client.models.generate_content(
+        model="gemini-3.5-flash-lite",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            temperature=0.45, 
+            max_output_tokens=1500
+        )
+    )
+    return {
+        "period": request.time_period,
+        "total_chunks": len(matchin_chunks),
+        "answer": response.text,
+        "chunks": ranked_chunks
+    }
+    
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
