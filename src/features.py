@@ -160,4 +160,76 @@ def get_guess_game() -> dict:
         "original_chat": "\n".join(raw_lines)
     }
 
+# two truths one lie, 2 real quotes 1 made by ai hopefully works
+def get_two_truths_one_lie(username: str = None) -> dict:
+    """picks a user, gets 2 real quotes and ai generate one fake quote in their style."""
+    chunks = load_chunks()
+    if not chunks:
+        return {"error": "Chunks file not found or empty."}
+
+    # gather eligible lines per user
+    author_lines = {}
+    for chunk in chunks:
+        for line in chunk.get("text", "").split("\n"):
+            if ": " not in line:
+                continue
+            speaker, quote = line.split(": ", 1)
+            message = quote.strip()
+            if 30 <= len(message) <= 140 and not message.startswith("@") and "https" not in message and "http" not in message:
+                author_lines.setdefault(speaker, []).append(message)
+
+    # filter authors with at least 10 eligible lines
+    eligible_authors = {author: lines for author, lines in author_lines.items() if len(lines) >= 10}
+    if not eligible_authors:
+        return {"error": "No eligible authors with enough lines found."}
+
+    matched_user = None
+    if username:
+        for author in eligible_authors:
+            if username.lower() in author.lower():
+                matched_user = author
+                break
+            if not matched_user:
+                return {"error": f"Not enough data for user '{username}' to generate a quote."}
+            else:
+                matched_user = random.choice(list(eligible_authors.keys()))
+
+            samples = random.sample(eligible_authors[matched_user], min(20, len(eligible_authors[matched_user])))
+            real_quotes = samples[:2]
+            style_reference = "\n".join([f"- {quote}" for quote in samples[2:]])
+
+            prompt = ()
+
+            try:
+                response = genai_client.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.5,
+                        max_output_tokens=400
+                    )
+                )
+                fake_quote = response.text.strip().strip('"').strip("'")
+            except Exception as e:
+                return {"error": f"AI generation failed: {str(e)}"}
+
+            options = [
+                {"text": real_quotes[0], "is_fake": False},
+                {"text": real_quotes[1], "is_fake": False},
+                {"text": fake_quote, "is_fake": True}
+            ]
+            random.shuffle(options)
+
+            fake_index = next(i for i, option in enumerate(options) if option["is_fake"])
+
+            return {
+                "username": matched_user,
+                "options": [choice["text"] for choice in options],
+                "fake_option_num": fake_index + 1,
+                "fake_quote": fake_quote,
+                "real_quotes": real_quotes,
+            }
+        
+
+
         
