@@ -599,6 +599,7 @@ async def assess(interaction: discord.Interaction, user: discord.Member):
         await interaction.followup.send(f"❌ Assessment broke: `{e}`")
 
 
+# nerdle
 nerdle_group = app_commands.Group(name="nerdle", description="basically harder Wordle")
 
 # 11./guess
@@ -608,8 +609,8 @@ async def nerdle_guess(interaction: discord.Interaction, guess: str):
 
     # initialise word if game havent start
     if not game_state.word or game_state.solved:
-        game_state.generate_word()
-        await interaction.followup.send(f"⚠️ **NEW WORD GENERATED!**\nIt is **{len(game_state.word)} letters** long. Don't mess it up bois")
+        await interaction.followup.send("❌ No active game wei! Use `/nerdle start` to begin.")
+        return
 
     response = game_state.evaluate_guess(guess, interaction.user)
     await interaction.followup.send(response)
@@ -621,12 +622,25 @@ async def nerdle_status(interaction: discord.Interaction):
         await interaction.response.send_message("❌ No active game la. Go start one la if want play play")
         return
 
-    board = game_state.get_current_board()
+    board = game_state.get_status_board()
     tries_used = game_state.player_tries.get(interaction.user.id, 0)
 
     await interaction.response.send_message(f"{board}\n\n*You have {3 - tries_used}/3 tries left, {interaction.user.display_name}.*")
 
 bot.tree.add_command(nerdle_group)
+
+# 13./start
+@nerdle_group.command(name="start", description="Start a new Nerdle")
+async def nerdle_start(interaction: discord.Interaction):
+    await interaction.response.defer()
+
+    if not game_state.word or game_state.solved:
+        game_state.generate_word()
+        board = game_state.get_current_board()
+        await interaction.followup.send(f"⚠️**NEW SENTENCE GENERATED!**\nGood luck bois.\n\n{board}")
+    else:
+        await interaction.followup.send("⚠️ **Game is already running woi!** Use `/nerdle status` to see the board.")
+
 
 # start the bot
 bot.run(TOKEN)
