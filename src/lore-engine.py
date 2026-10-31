@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from ai import ask
 from features import get_trivia
 from assessment import generate_stats
-
+from src.wordle import game_state
 
 # clean up Hugging Face warning spam in terminal
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
@@ -596,7 +596,33 @@ async def assess(interaction: discord.Interaction, user: discord.Member):
         await interaction.followup.send(f"❌ Assessment broke: `{e}`")
 
 
+wordle_group = app_commands.Group(name="wordle", description="Hardcore Wordle")
 
+# 11./guess
+@wordle_group.command(name="guess", description="Use your 3 tries for the Wordle")
+async def wordle_guess(interaction: discord.Interaction, guess: str):
+    await interaction.response.defer()
 
+    # initialise word if game havent start
+    if not game_state.word or game_state.solved:
+        game_state.generate_word()
+        await interaction.followup.send(f"⚠️ **NEW WORD GENERATED!**\nIt is **{len(game_state.word)} letters** long. Don't mess it up bois")
+
+    response = game_state.evaluate_guess(guess, interaction.user)
+    await interaction.followup.send(response)
+
+# 12./status
+@wordle_group.command(name="status", description="Check current board and word length")
+async def wordle_status(interaction: discord.Interaction):
+    if not game_state.word or game_state.solved:
+        await interaction.response.send_message("❌ No active game la. Go start one la if want play play")
+        return
+
+    board = game_state.get_current_board()
+    tries_used = game_state.player_tries.get(interaction.user.id, 0)
+
+    await interaction.response.send_message(f"{board}\n\n* You have {3 - tries_used}/3 tries left. {interaction.user.display_name}.*")
+
+    
 # start the bot
 bot.run(TOKEN)
