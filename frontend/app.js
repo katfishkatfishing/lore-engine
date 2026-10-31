@@ -5,18 +5,26 @@ window.addEventListener('scroll', function() {
     const scrollY = window.scrollY;
     const heroContent = document.getElementById('hero-content');
     const navLogo = document.getElementById('nav-logo');
+    const chatBubbles = document.querySelectorAll('.discord-bubble');
     const maxScroll = 400;
     const progress = Math.min(scrollY / maxScroll, 1);
 
     if (heroContent && navLogo) {
         if (scrollY <= maxScroll) {
-            // FIXED: Used backticks instead of single quotes for template literals
             heroContent.style.transform = `translateY(${scrollY * 0.4}px) scale(${1 - progress * 0.15})`;
             heroContent.style.opacity = 1 - progress * 1.5;
             navLogo.style.opacity = progress;
+
+            chatBubbles.forEach(bubble => {
+                bubble.style.opacity = 0.65 - (progress * 0.65);
+            });
         } else {
             heroContent.style.opacity = 0;
             navLogo.style.opacity = 1;
+
+            chatBubbles.forEach(bubble => {
+                bubble.style.opacity = 0
+            });
         }
     }
 });
