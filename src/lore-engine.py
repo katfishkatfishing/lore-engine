@@ -14,6 +14,7 @@ from ai import ask
 from features import get_trivia
 from assessment import generate_stats
 from src.wordle import game_state
+import traceback
 
 
 # clean up Hugging Face warning spam in terminal
@@ -572,7 +573,7 @@ async def trivia(interaction: discord.Interaction):
 async def assess(interaction: discord.Interaction, user: discord.Member):
     await interaction.response.defer()
 
-    target_username = user.name
+    target_username = user.display_name
 
     try:
         # call evaluation from assessment.py
@@ -581,8 +582,6 @@ async def assess(interaction: discord.Interaction, user: discord.Member):
         if "error" in report:
             await interaction.followup.send(f"❌ I don't have enough data on {user.mention} to judge them.")
             return
-            
-        embed = discord.Embed(title=f"📋 Psychological Dossier: {stats['subject']}", color=discord.Color.dark_purple())
 
 
         stats = report["metrics"]
@@ -596,7 +595,9 @@ async def assess(interaction: discord.Interaction, user: discord.Member):
         await interaction.followup.send(response)
         
     except Exception as e:
-        await interaction.followup.send(f"❌ Assessment broke: `{e}`")
+        import traceback
+        traceback.print_exc()
+        await interaction.followup.send("❌ Assessment broke.")
 
 
 # nerdle

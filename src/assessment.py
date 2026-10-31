@@ -36,12 +36,12 @@ def compute_stats(target_user: str) -> dict:
     caps_counter = 0
 
     docs = results["documents"]
-    metas = results["documents"]
+    metas = results.get("metadatas", [])
 
     for i in range(len(docs)):
         meta = metas[i] if metas and metas[i] else {}
         
-        # FIX: Convert accidental string metadata back to a dictionary
+        # convert string metadata back to a dictionary
         if isinstance(meta, str):
             import json
             try:
@@ -51,7 +51,7 @@ def compute_stats(target_user: str) -> dict:
 
         author = meta.get("messager_name", "Unknown User")
 
-        # Only process quotes from the target user
+        # Process quotes from the target user
         if target_user.lower() not in author.lower():
             continue
 
