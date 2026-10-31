@@ -10,11 +10,12 @@ class Wordle:
         self.solved = False
         self.guesses = []
         self.player_tries = {}
+        self.revealed_indices = set()
 
     # get insane word from gemini
     def generate_word(self):
         prompt = """
-        Generate an extremely obscure, difficult, long, real English word (at least 7+ letters long). Return only a raw .JSON object with these exact keys: "word", "meaning", "example". Do not include markdown blocks or extra text."""
+        Generate an extremely obscure, difficult, and meaningful English sentence (at least 4+ words and at least 20+ characters long). Return only a raw .JSON object with these exact keys: "word", "meaning", "example". (Put the sentence in the "word" key). Do not include markdown blocks or extra text."""
         response = genai_client.models.generate_content(
             model = 'gemini-3.5-flash-lite',
             contents = prompt
@@ -34,6 +35,7 @@ class Wordle:
         self.solved = False
         self.guesses = []
         self.player_tries = {}
+        self.revealed_indices = set()
 
     def evaluate_guess(self, guess: str, user: discord.Member) -> str:
         guess = guess.upper()
@@ -85,12 +87,30 @@ class Wordle:
             self.solved = True
             return self.get_lose_board(user)
 
+        # hint logic
+        if len(self.guesses) %2 == 0:
+            import random
+            n = len(self.word)
+            num_to_reveal = max(1, (n-10) // 6)
+
+            unrevealed = [i for i, char in enumerate(self.word) if char.isalpha() and i not in self.revealed_indices]
+
+            if unrevealed:
+                to_reveal = random.sample(unrevealed, min(num_to_reveal, len(unrevealed)))
+                self.revealed_indices.update(to_reveal)
+
         return self.get_current_board()
 
     def get_current_board(self) -> str:
         board = "\n\n".join(self.guesses) if self.guesses else "*No guesses eh*"
         team_tries_left = 12 - len(self.guesses)
-        return f"**Impossible Wordle**\n*Word length: {len(self.word)} letters*\n\n{board}"
+
+        hint_str = ""
+        if self.revealed_indices:
+            hint_arr = [char if (i in self.revealed_indices or not char.isalpha()) else "-" for i, char in enumerate(self.word)]
+            hint_str = f"\n💡 **Hint:**`{''.join(hint_arr)}`\n "
+            
+        return f"**Impossible Nerdle**\n*Word length: {len(self.word)} letters*\n\n{board}"
 
     def get_win_board(self, winner: discord.Member) -> str:
         board = "\n\n".join(self.guesses)

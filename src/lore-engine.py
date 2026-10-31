@@ -1,4 +1,6 @@
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -12,6 +14,7 @@ from ai import ask
 from features import get_trivia
 from assessment import generate_stats
 from src.wordle import game_state
+
 
 # clean up Hugging Face warning spam in terminal
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
@@ -596,11 +599,11 @@ async def assess(interaction: discord.Interaction, user: discord.Member):
         await interaction.followup.send(f"❌ Assessment broke: `{e}`")
 
 
-wordle_group = app_commands.Group(name="wordle", description="Hardcore Wordle")
+nerdle_group = app_commands.Group(name="nerdle", description="basically harder Wordle")
 
 # 11./guess
-@wordle_group.command(name="guess", description="Use your 3 tries for the Wordle")
-async def wordle_guess(interaction: discord.Interaction, guess: str):
+@nerdle_group.command(name="guess", description="Use your 3 tries for the Wordle")
+async def nerdle_guess(interaction: discord.Interaction, guess: str):
     await interaction.response.defer()
 
     # initialise word if game havent start
@@ -612,8 +615,8 @@ async def wordle_guess(interaction: discord.Interaction, guess: str):
     await interaction.followup.send(response)
 
 # 12./status
-@wordle_group.command(name="status", description="Check current board and word length")
-async def wordle_status(interaction: discord.Interaction):
+@nerdle_group.command(name="status", description="Check current board and word length")
+async def nerdle_status(interaction: discord.Interaction):
     if not game_state.word or game_state.solved:
         await interaction.response.send_message("❌ No active game la. Go start one la if want play play")
         return
@@ -621,8 +624,9 @@ async def wordle_status(interaction: discord.Interaction):
     board = game_state.get_current_board()
     tries_used = game_state.player_tries.get(interaction.user.id, 0)
 
-    await interaction.response.send_message(f"{board}\n\n* You have {3 - tries_used}/3 tries left. {interaction.user.display_name}.*")
+    await interaction.response.send_message(f"{board}\n\n*You have {3 - tries_used}/3 tries left, {interaction.user.display_name}.*")
 
-    
+bot.tree.add_command(nerdle_group)
+
 # start the bot
 bot.run(TOKEN)
