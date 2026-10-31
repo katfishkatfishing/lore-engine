@@ -52,7 +52,9 @@ h1, h2, h3, .pixel-heading {
 .pixel-box {
     border: 4px solid #30363d;
     border-radius: 2px;
-    background: rgba(13, 17, 23, 0.8);
+    background: rgba(13, 17, 23, 0.95);
+    position: relative;
+    z-index: 20;
 }
 
 /* Neon Glows */

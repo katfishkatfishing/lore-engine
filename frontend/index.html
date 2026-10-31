@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="text-slate-100 antialiased selection:bg-cyan-500 selection:text-black bg-slate-950">
+
+    <!-- Pixel Scanlines Overlay -->
+     <div class="fixed inset-0 pixel-scanlines z-10 pointer-events-none"></div>
     
     <!-- Navigation Overlay -->
      <nav class="fixed top-0 left-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b-2 border-slate-800/80 px-4 md:px-6 py-3 md:py-4">
@@ -42,16 +45,12 @@
 
     <!-- Hero Section -->
      <header class="hero-fullscreen relative text-center px-6">
-
-        <!-- Pixel Overlay Effect -->
-         <div class="absolute inset-0 pixel-scanlines z-20">
-         </div>
         
         <!-- Floating Discord Chat Bubbles -->
          <div class="absolute inset-0 overflow-hidden">
             
             <!-- Floating Quote 1 -->
-             <div class="discord-chat-bubble top-28 md:top-32 left-6 md:left-16 lg:left-28 max-w-sm rotate-casual-left-lg hidden sm:block">
+             <div class="discord-bubble discord-chat-bubble top-28 md:top-32 left-6 md:left-16 lg:left-28 max-w-sm rotate-casual-left-lg hidden sm:block">
                 <div class="flex items-start gap-3">
                     
                     <!-- Avatar -->
@@ -97,7 +96,7 @@
              </div>
 
             <!-- Floating Quote 2 -->
-             <div class="discord-chat-bubble top-28 md:top-32 right-6 md:right-16 lg:right-28 max-w-sm rotate-casual-right-lg hidden sm:block">
+             <div class="discord-bubble discord-chat-bubble top-28 md:top-32 right-6 md:right-16 lg:right-28 max-w-sm rotate-casual-right-lg hidden sm:block">
                 <div class="flex items-start gap-3">
                     
                     <!-- Avatar -->
@@ -128,7 +127,7 @@
              </div>
 
             <!-- Floating Quote 3 -->
-             <div class="discord-chat-bubble bottom-20 md:bottom-24 left-6 md:left-16 lg:left-28 max-w-sm rotate-casual-right-sm hidden sm:block">
+             <div class="discord-bubble discord-chat-bubble bottom-20 md:bottom-24 left-6 md:left-16 lg:left-28 max-w-sm rotate-casual-right-sm hidden sm:block">
                 <div class="flex items-start gap-3">
                     
                     <!-- Avatar -->
@@ -164,7 +163,7 @@
              </div>
 
             <!-- Floating Quote 4 -->
-             <div class="discord-chat-bubble bottom-20 md:bottom-24 right-6 md:right-16 lg:right-28 max-w-sm rotate-casual-left-sm hidden sm:block">
+             <div class="discord-bubble discord-chat-bubble bottom-20 md:bottom-24 right-6 md:right-16 lg:right-28 max-w-sm rotate-casual-left-sm hidden sm:block">
                 <div class="flex items-start gap-3">
                     
                     <!-- Avatar -->
@@ -213,7 +212,7 @@
      </header>
 
     <!-- Main Content Section -->
-     <main class="relative z-30 bg-slate-950 border-t-4 border-slate-900 pb-24">
+     <main>
 
         <!-- Mechanics -->
          <section id="mechanics" class="max-w-6xl mx-auto py-24 px-6">
@@ -337,7 +336,7 @@
      </main>
 
     <!-- Footer -->
-     <footer class="text-center py-12 text-slate-500 text-xl border-t border-slate-800 bg-slate-950">
+     <footer class="relative z-30 text-center py-12 text-slate-500 text-xl border-t border-slate-800 bg-slate-950">
         <p>Lore Engine // Crafterd with & for Friends</p>
      </footer>
 
