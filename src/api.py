@@ -190,7 +190,7 @@ def summarise_timeline(request: TimeRequest):
     prompt = (
         f"[CHRONOLOGICAL CHAT LOGS FROM {request.time_period}]\n\n{context_str}\n\n"
         f"[TASK]\n{request.focus_user}\n"
-        f"Recount what this circle was up to during {req.time_period} in 2 crisp paragraphs, citing specific dates and incidents."
+        f"Recount what this circle was up to during {request.time_period} in 2 crisp paragraphs, citing specific dates and incidents."
     )
 
     response = genai_client.models.generate_content(

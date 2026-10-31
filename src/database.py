@@ -9,7 +9,6 @@ import chromadb
 from chromadb import Documents, EmbeddingFunction, Embeddings
 from google import genai
 from google.genai import types
-from ai import ask
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -103,43 +102,6 @@ def build_vector_db():
             time.sleep(62)  # slight delay to avoid overwhelming the API
 
     print(f"Successfully indexed {collection.count()} chunks into chromadb.")
-
-def search(query: str, top_k: int = 4) -> list[dict]:
-    """Embeds the user's question via gemini and retrieves the closest chat logs"""
-    collection = get_collection(is_query=True)
-    total_count = collection.count()
-    
-    if total_count == 0:
-        return []
-
-    pool_size = min(top_k * 3, total_count)
-    results = collection.query(query_texts=[query], n_results=pool_size)
-
-    if not results["documents"] or not results["documents"][0]:
-        return []
-
-    candidates = []
-    # Format the results
-    for i in range(len(results["documents"][0])):
-        meta = results["metadatas"][0][i]
-        distance = results["distances"][0][i]
-        candidates.append({
-            "id": results["ids"][0][i],
-            "score": round(1 - distance, 4),  # convert distance to similarity score
-            "channel": meta["channel"],
-            "time": meta["start_time"],
-            "authors": meta["authors"],
-            "text": results["documents"][0][i],
-        })
-
-    if len(candidates) <= top_k:
-        return candidates
-
-    best_matches = candidates[:3]
-    remaining_candidates = candidates[3:]
-    diverse_picks = random.sample(remaining_candidates, min(top_k - 3, len(remaining_candidates)))
-
-    return best_matches + diverse_picks
 
 MAX_GAP_MINUTES = 30  # maximum time gap in minutes to consider messages as part of the same chunk
 
@@ -247,20 +209,44 @@ def fetch_neighbour(collection, matched_chunks: list[dict]) -> list[dict]:
             })
         return expanded_results
 
-def search_lore(query: str, top_k: int = 6, expand_context: bool = True) -> list[dict]:
-    """Retrieves relevant chat logs with diversity and auto attach the neighbouring chunks if convo is split across chunks."""
-      
+def search(query: str, top_k: int = 6, expand_context: bool = True) -> list[dict]:
+    """Embeds the user's question via gemini and retrieves the closest chat logs and their neighbouring chunks if they are part of the same conversation."""
+    collection = get_collection(is_query=True)
+    total_count = collection.count()
+    
+    if total_count == 0:
+        return []
 
-if __name__ == "__main__":
-    build_vector_db()
+    pool_size = min(top_k * 3, total_count)
+    results = collection.query(query_texts=[query], n_results=pool_size)
 
-    print("\n--- Sample Search ---")
-    while True:
-        q = input("\n Ask a question (or type 'q' to quit): ").strip()
-        if not q or q.lower() == 'q':
-            break
-        print("\nSearching for relevant chat logs...")
-        answer = ask(q)
-        print("\n" + "=" * 60)
-        print(answer)
-        print("=" * 60)
+    if not results["documents"] or not results["documents"][0]:
+        return []
+
+    candidates = []
+    # Format the results
+    for i in range(len(results["documents"][0])):
+        meta = results["metadatas"][0][i]
+        distance = results["distances"][0][i]
+        candidates.append({
+            "id": results["ids"][0][i],
+            "score": round(1 - distance, 3),  # convert distance to similarity score
+            "channel": meta.get("channel", "general"),
+            "time": meta.get("start_time", ""),
+            "authors": meta.get("authors", ""),
+            "text": results["documents"][0][i],
+        })
+
+    if len(candidates) > top_k:
+        best_matches = candidates[:3]
+        remaining_candidates = candidates[3:]
+        diverse_picks = random.sample(remaining_candidates, min(top_k - 3, len(remaining_candidates)))
+        selected = best_matches + diverse_picks
+    else:
+        selected = candidates
+
+    # expand the selected results with their neighbouring chunks if they are part of the same conversation
+    if expand_context:
+        return fetch_neighbour(collection, selected)
+
+    return selected
