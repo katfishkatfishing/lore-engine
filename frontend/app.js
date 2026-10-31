@@ -3,8 +3,6 @@
 // Scroll-driven Animation & Nav Logo Animation
 window.addEventListener('scroll', function() {
     const scrollY = window.scrollY;
-    console.log("Current Scroll Y:", scrollY); // Check your F12 browser console!
-
     const heroContent = document.getElementById('hero-content');
     const navLogo = document.getElementById('nav-logo');
     const maxScroll = 400;
@@ -12,6 +10,7 @@ window.addEventListener('scroll', function() {
 
     if (heroContent && navLogo) {
         if (scrollY <= maxScroll) {
+            // FIXED: Used backticks instead of single quotes for template literals
             heroContent.style.transform = `translateY(${scrollY * 0.4}px) scale(${1 - progress * 0.15})`;
             heroContent.style.opacity = 1 - progress * 1.5;
             navLogo.style.opacity = progress;
