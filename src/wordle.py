@@ -21,10 +21,10 @@ class Wordle:
         return char
 
     # get insane sentence from gemini
-    def generate_word(self):
+    async def generate_word(self):
         prompt = """
         Generate an extremely obscure, difficult, and meaningful English sentence (at least 4+ words and at least 20-50 letters long). Return only a raw .JSON object with these exact keys: "word", "meaning", "example". (Put the sentence in the "word" key). Do not include markdown blocks or extra text."""
-        response = genai_client.models.generate_content(
+        response = await genai_client.aio.models.generate_content(
             model = 'gemini-3.5-flash-lite',
             contents = prompt
         )

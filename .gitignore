@@ -9,3 +9,7 @@ library_db/
 __pycache__/
 *.pyc
 *.env
+
+# hide our discord chat history
+data/cleaned
+data/raw

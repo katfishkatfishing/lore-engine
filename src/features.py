@@ -27,7 +27,7 @@ def get_trivia(mode: str = "mix") -> dict:
         return get_online_trivia(category="any")
     
     collection = get_collection()
-    results = collection.get()
+    results = collection.get(limit=15000, include=["documents", "metadatas"])
 
     if not results or not results.get("documents"):
         return {"error": "No quotes found in the archive yet."}

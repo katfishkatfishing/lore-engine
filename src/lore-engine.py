@@ -570,17 +570,28 @@ async def trivia(interaction: discord.Interaction):
 
 # 10. /assess
 @bot.tree.command(name="assess", description="Get a psychological evaluation of a server member")
-async def assess(interaction: discord.Interaction, user: discord.Member):
+async def assess(interaction: discord.Interaction, target: discord.Member = None):
+
+    target = target or interaction.user
     await interaction.response.defer()
 
-    target_username = user.display_name
+    base_names = [target.display_name, target.name, target.global_name]
+    aliases = set()
+
+    for name in base_names:
+        if name:
+            aliases.add(name)
+            aliases.add(name.lower())
+            aliases.add(name.capitalize())
+
+    alias_list = list(aliases)
 
     try:
         # call evaluation from assessment.py
-        report = generate_stats(target_username)
+        report = await generate_stats(alias_list, target.display_name)
 
         if "error" in report:
-            await interaction.followup.send(f"❌ I don't have enough data on {user.mention} to judge them.")
+            await interaction.followup.send(f"❌ I don't have enough data on {target.mention} to judge them.")
             return
 
 
@@ -636,7 +647,7 @@ async def nerdle_start(interaction: discord.Interaction):
     await interaction.response.defer()
 
     if not game_state.word or game_state.solved:
-        game_state.generate_word()
+        await game_state.generate_word()
         board = game_state.get_current_board()
         await interaction.followup.send(f"⚠️**NEW SENTENCE GENERATED!**\nGood luck bois.\n\n{board}")
     else:
