@@ -1,6 +1,7 @@
 # lore-engine
 a discord bot ai assistant built specifically for your friend group that acts like a sassy server historian and gameshow host
 
+a wip website for this bot [here](https://katfishing.dev).
 
 > Third-space Hack club week 6!
 
@@ -10,7 +11,7 @@ so far has:
 - dc chat indexing
 - and the ai works
 - trivia (questions based on chat logs or fetched online)
-- two truths one lie (based on chat logs or fetches questions from web search)
+- two truths one lie (based on chat logs or fetches questions online)
 - game style update patch notes
 - hall of shame thing (wip)
 - hall of fame (wip)
