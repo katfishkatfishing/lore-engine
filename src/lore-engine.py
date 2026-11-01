@@ -1,4 +1,6 @@
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -11,6 +13,8 @@ from datetime import datetime, timedelta
 from ai import ask
 from features import get_trivia
 from assessment import generate_stats
+from src.wordle import game_state
+import traceback
 
 
 # clean up Hugging Face warning spam in terminal
@@ -552,7 +556,9 @@ async def trivia(interaction: discord.Interaction):
         options_text = "\n".join([f"• {opt}" for opt in game['options']])
         
         response = f"🧠 **Who said this?**\n*{game['hint']['date']} in {game['hint']['channel']}*\n\n"
-        response += f"**\"{game['question'].replace('Who said: ', '').strip('\"')}\"**\n\n"
+        clean_quote = game['question'].replace('Who said: ', '').strip('"')
+
+        response += f"**\"{clean_quote}\"**\n\n"
         response += f"**Options:**\n{options_text}\n\n"
         response += f"*(Spoiler alert)* ||**Answer:** {game['correct_answer']}||"
 
@@ -564,33 +570,77 @@ async def trivia(interaction: discord.Interaction):
 
 # 10. /assess
 @bot.tree.command(name="assess", description="Get a psychological evaluation of a server member")
-async def assess(interaction: discord.Interaction, target: discord.User):
+async def assess(interaction: discord.Interaction, user: discord.Member):
     await interaction.response.defer()
+
+    target_username = user.display_name
 
     try:
         # call evaluation from assessment.py
-        stats = generate_stats(target.display_name)
+        report = generate_stats(target_username)
 
-        if "error" in stats:
-            await interaction.followup.send(f"❌ I don't have enough data on {target.mention} to judge them.")
+        if "error" in report:
+            await interaction.followup.send(f"❌ I don't have enough data on {user.mention} to judge them.")
             return
-            
-        embed = discord.Embed(title=f"📋 Psychological Dossier: {stats['subject']}", color=discord.Color.dark_purple())
-        
-        metrics_text = (
-            f"🕒 **Peak Activity:** {stats['metrics']['peak_hour']}\n"
-            f"🦉 **Night Owl Rate:** {stats['metrics']['night_owl_pct']}\n"
-            f"🗯️ **Rage Rate (Caps):** {stats['metrics']['caps_pct']}\n"
-            f"🤝 **Primary Accomplice:** {stats['metrics']['accomplice']}\n"
-            f"🗣️ **Overused Words:** {', '.join(stats['metrics']['top_words'])}"
-        )
 
-        embed.add_field(name="Behavioral Metrics", value=metrics_text, inline=False)
-        embed.add_field(name="The Librarian's Verdict", value=stats['evaluation'], inline=False)
+
+        stats = report["metrics"]
         
-        await interaction.followup.send(embed=embed)
+        response = f"🧠 **Psychological Profile: {report['subject']}**\n"
+        response += f"📊 **Lines Analyzed:** {stats['total_lines_indexed']} | **Avg Length:** {stats['avg_line_length']} chars\n"
+        response += f"🤬 **RAGE Rate:** {stats['caps_pct']}\n"
+        response += f"🗣️ **Overused Words:** {', '.join(stats['top_words'])}\n\n"
+        response += f"**Evaluation:**\n{report['evaluation']}"
+
+        await interaction.followup.send(response)
+        
     except Exception as e:
-        await interaction.followup.send(f"❌ Assessment failed: `{e}`")
+        import traceback
+        traceback.print_exc()
+        await interaction.followup.send("❌ Assessment broke.")
+
+
+# nerdle
+nerdle_group = app_commands.Group(name="nerdle", description="basically harder Wordle")
+
+# 11./guess
+@nerdle_group.command(name="guess", description="Use your 3 tries for the Wordle")
+async def nerdle_guess(interaction: discord.Interaction, guess: str):
+    await interaction.response.defer()
+
+    # initialise word if game havent start
+    if not game_state.word or game_state.solved:
+        await interaction.followup.send("❌ No active game wei! Use `/nerdle start` to begin.")
+        return
+
+    response = game_state.evaluate_guess(guess, interaction.user)
+    await interaction.followup.send(response)
+
+# 12./status
+@nerdle_group.command(name="status", description="Check current board and word length")
+async def nerdle_status(interaction: discord.Interaction):
+    if not game_state.word or game_state.solved:
+        await interaction.response.send_message("❌ No active game la. Go start one la if want play play")
+        return
+
+    board = game_state.get_status_board()
+    tries_used = game_state.player_tries.get(interaction.user.id, 0)
+
+    await interaction.response.send_message(f"{board}\n\n*You have {3 - tries_used}/3 tries left, {interaction.user.display_name}.*")
+
+bot.tree.add_command(nerdle_group)
+
+# 13./start
+@nerdle_group.command(name="start", description="Start a new Nerdle")
+async def nerdle_start(interaction: discord.Interaction):
+    await interaction.response.defer()
+
+    if not game_state.word or game_state.solved:
+        game_state.generate_word()
+        board = game_state.get_current_board()
+        await interaction.followup.send(f"⚠️**NEW SENTENCE GENERATED!**\nGood luck bois.\n\n{board}")
+    else:
+        await interaction.followup.send("⚠️ **Game is already running woi!** Use `/nerdle status` to see the board.")
 
 
 # start the bot
