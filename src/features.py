@@ -127,7 +127,7 @@ def get_guess_game() -> dict:
     prompt = (
         f"Read this anonymized chat transcript:\n\n{anon_transcript}\n\n"
         "Provide your output exactly in this format:\n"
-        "[Redacted Chat Text]\n"
+        "[Redacted Chat Text Here (do not output this)] (include actual chat text but redacted)\n"
         "SUMMARY: [One short, funny sentence summarizing what they are talking about without using specific names]"
     )
 
@@ -270,7 +270,7 @@ def get_patch_notes(days_window: int = 30) -> dict:
     previous_messages = Counter()
     recent_late_night = Counter()
     recent_caps = Counter()
-    recent_samples = ()
+    recent_samples = []
 
     for dt, chunk in dated_chunks:
         lines = [line for line in chunk.get("text", "").split("\n") if ": " in line]
