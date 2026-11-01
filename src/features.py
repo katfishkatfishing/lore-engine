@@ -577,19 +577,25 @@ def fetch_json(url: str, timeout: int = 5) -> dict | list | None:
 
 # another 2 truths 1 lie game but with stuff from the internet
 def get_live_web_two_truths_one_lie(topic: str = "weird world news or video game facts/news")
-    """ Uses gemini built in google search to get 2 stuffs and makes up 1 fake stuff so players have to guess which one ai made up."""
+    """ pulls 2 real bizarre headlines/facts from the internet and asks ai to generate a fake one in the same style, then shuffles them for the user to guess."""
+
+    real_pool = fetch_web_facts(topic)
+
+    if len(real_pool) < 2:
+        real_two = random.sample(real_pool, 2)
+        
 
     prompt = (
-        f"Use Google Search to find 2 bizarre, hard-to-believe, but 100% REAL facts or news headlines "
-        f"about: {topic}.\n"
-        f"Then, invent 1 completely FAKE fact/headline on the same topic that sounds equally plausible.\n\n"
-        f"Return your response in strict JSON format with these exact keys:\n"
-        f"{{\n"
-        f'  "real_1": "First real headline/fact",\n'
-        f'  "real_2": "Second real headline/fact",\n'
-        f'  "fake": "The fabricated headline/fact",\n'
-        f'  "explanation": "A 2-sentence dry explanation from Amon revealing the fake and citing when the two real ones happened."\n'
-        f"}}"
+        f"Here are 2 REAL bizarre headlines/facts pulled from the internet today:\n"
+        f"1. {real_two[0]}\n"
+        f"2. {real_two[1]}\n\n"
+        f"TASK:\n"
+        f"1. Invent 1 completely FAKE headline/fact (related to '{topic}' or matching the exact tone and length of the two above) "
+        f"that sounds 100% believable.\n"
+        f"2. Write a dry, 2-sentence reveal in your COI Amon voice mocking anyone who fell for your fabrication.\n\n"
+        f"Output strictly in this format:\n"
+        f"FAKE: <your fabricated headline here>\n"
+        f"REVEAL: <your 2-sentence Amon commentary here>"
     )
 
     try:
@@ -597,22 +603,26 @@ def get_live_web_two_truths_one_lie(topic: str = "weird world news or video game
             model="gemini-3.5-flash-lite",
             contents=prompt,
             config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
                 temperature=0.6,
-                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=400
             )
         )
 
         raw_output = response.text.strip()
-        if "```" in raw_output:
-            raw_output = raw_output.split("```")[1]
-            if raw_output.startswith("json"):
-                raw_output = raw_output[4:]
-        parsed = json.loads(raw_output.strip())
+        fake_headline = "A Japanese zoo accidentally billed two raccoons as rare red pandas for three years."
+        reveal_commentary = "It takes remarkably little effort to deceive you."
+
+        for line in raw_output.split("\n"):
+            if line.strip().startswith("FAKE:"):
+                fake_headline = line.split("FAKE:", 1)[1].strip().strip('"')
+            elif line.strip().startswith("REVEAL:"):
+                reveal_commentary = line.split("REVEAL:", 1)[1].strip()
 
         choices = [
-            {"text": parsed["real1"], "is_fake": False},
-            {"text": parsed["real2"], "is_fake": False},
-            {"text": parsed["fake"], "is_fake": True}
+            {"text": real_two[0], "is_fake": False},
+            {"text": real_two[1], "is_fake": False},
+            {"text": fake_headline, "is_fake": True}
         ]
         random.shuffle(choices)
         fake_num = next(i + 1 for i, choice in enumerate(choices) if choice["is_fake"])
@@ -621,8 +631,9 @@ def get_live_web_two_truths_one_lie(topic: str = "weird world news or video game
             "topic": topic,
             "options": [choice["text"] for choice in choices],
             "fake_option_num": fake_num,
-            "fake_quote": parsed["fake"],
-            "ai_reveal": parsed["explanation"]
+            "fake_quote": fake_headline,
+            "real_quotes": real_two,
+            "ai_reveal": reveal_commentary
         }
     except Exception as e:
         return {"error": f"web search failed: {e}"}
@@ -712,3 +723,41 @@ def get_online_trivia(category: str = "any", difficulty: str = "medium", comment
         "options": options,
         "correct_answer": correct_answer
     }
+
+def fetch_web_facts(topic: str= "") -> list[str]:
+    """Fetches bizarre headlines/facts from public json endpoints"""
+    facts = []
+
+    # reddit public json feed
+    subreddits = ["todayilearned", "interestingasfuck", "oddlyterrifying", "nottheonion", "offbeat"]
+    chosen_subreddit = random.choice(subreddits)
+    reddit_url = f"https://www.reddit.com/r/{chosen_subreddit}/hot.json?limit=25"
+
+    try:
+        request = urllib.request.Request(
+            reddit_url,
+            headers={"User-Agent": "LoreEngine/1.0"}
+        )
+        with urllib.request.urlopen(request, timeout=5) as response:
+            reddit_data = json.loads(response.read().decode("utf-8"))
+            posts = reddit_data.get("data", {}).get("children", [])
+            for post in posts:
+                title = post.get("data", {}).get("children", [])
+
+                for prefix in {"TIL that ", "TIL ", "Today I learned that ", "Today I learned "}:
+                    if title.startswith(prefix):
+                        title = title[len(prefix):].strip()
+                        title = title[0].upper() + title[1:]  # capitalize first letter
+                    if 35 <= len(title) <= 180 and not post.get("data", {}).get("stickied"):
+                        facts.append(html.unescape(title))
+
+    except Exception as e:
+        print(f"Error fetching from Reddit: {e}")
+
+    if len(facts) < 2:
+        for _ in range(3):
+            uf_data = fetch_json("https://uselessfacts.jsph.pl/api/v2/facts/random?language=en")
+            if uf_data and "text" in uf_data:
+                facts.append(uf_data["text"].strip())
+
+    return facts
