@@ -17,6 +17,9 @@
 
     <!-- Pixel Scanlines Overlay -->
      <div class="fixed inset-0 pixel-scanlines z-10 pointer-events-none"></div>
+
+    <!-- Background -->
+     <canvas id="bg-canvas" class="fixed inset-0 z-0 pointer-events-none"></canvas>
     
     <!-- Navigation Overlay -->
      <nav class="fixed top-0 left-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b-2 border-slate-800/80 px-4 md:px-6 py-3 md:py-4">
@@ -32,7 +35,7 @@
 
             <!-- Smooth Scroll to Content -->
              <div class="flex space-x-3 md:space-x-8 text-base md:text-xl">
-                <a href="#mechanics" class="hover:text-cyan-400 transition-colors truncate">[MECHANICS]</a>
+                <a href="#mechanics" class="hover:text-cyan-400 transition-colors truncate">[INTRO]</a>
                 <a href="#ticker" class="hover:text-cyan-400 transition-colors truncate">[LIVE LORE]</a>
                 <a href="#hall" class="hover:text-cyan-400 transition-colors truncate">[MEMORY LANE]</a>
              </div>
@@ -207,6 +210,7 @@
                     START EXPLORING ↓
                 </a>
              </div>
+
          </div>
 
      </header>
@@ -214,54 +218,60 @@
     <!-- Main Content Section -->
      <main>
 
-        <!-- Mechanics -->
-         <section id="mechanics" class="max-w-6xl mx-auto py-24 px-6">
-            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 p-8 md:p-12">
+        <!-- Intro -->
+         <section id="mechanics" class="max-w-5xl mx-auto py-28 px-6 relative">
 
-                <!-- Header -->
-                 <div class="flex items-center gap-3 border-b-2 border-slate-800 pb-6 mb-8">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl text-cyan-400 font-bold">
-                            Features
-                        </h2>
-                        <p class="text-slate-400 text-lg">
-                            The server's shared braincell.
-                        </p>
-                    </div>
-                 </div>
+            <!-- Header -->
+             <div class="mb-16 relative w-screen -ml-[calc((100vw-100%)/2)]">
+                <div class="bg-slate-900 border-y-2 border-r-2 border-cyan-400 pl-8 sm:pl-20 pr-12 py-6 shadow-[6px_6px_0px_0px_rgba(0,240,255,0.4)] relative rounded-r-lg max-w-2xl md:max-w-3xl">
+                    <h2 class="text-3xl md:text-5xl text-cyan-400 pixel-heading tracking-wide">
+                        Features
+                    </h2>
+                </div>
+             </div>
 
-                <!-- Content -->
-                 <div class="space-y-6 text-slate-300">
-                    <div>
-                        <h3 class="text-xl text-white font-bold mb-2">
-                            Introducing the Lore Engine
-                        </h3>
-                        <p class="text-xl leading-relaxed">
-                            Lore Engine is a bot designed to "screenshot" your server's chat history and stuff so your group never fades away.
-                        </p>
-                    </div>
-                    <div>
-                        <h3 class="text-xl text-white font-bold mb-3">
-                            Bot Features
-                        </h3>
-                        <ul class="list-disc list-inside space-y-3 text-xl text-slate-300 pl-2">
-                            <li><strong class="text-cyan-400">Chat Archiving:</strong> Archive chats that no one wants to remember.</li>
-                            <li><strong class="text-cyan-400">Quote Vault:</strong> Quote people like Socrates.</li>
-                            <li><strong class="text-cyan-400">Secondary Google:</strong> Fact-checks server debates instantly by scanning historical logs to prove who said what and when.</li>
-                        </ul>
-                    </div>
-                 </div>
+            <!-- Content -->
+             <div class="space-y-10">
+                <div class="bg-slate-950 border-2 border-cyan-500/60 p-8 md:p-10 rounded relative -rotate-1 shadow-[6px_6px_0px_0px_rgba(0,240,255,0.2)] transition-transform hover:rotate-0 duration-300">
+                    <p class="text-xl md:text-2xl text-slate-200 leading-snug font-mono text-left mb-8">
+                        A Discord bot designed to "screenshot" your server's chat history and stuff so your group never fades away.
+                    </p>
+                    <ul class="space-y-6 font-mono text-xl text-slate-300">
+                        <li class="border-l-4 border-cyan-400 pl-4 py-1">
+                            <strong class="text-cyan-400">Chat Archiving</strong>
+                            <span class="block text-slate-400 text-lg mt-0.5">Archive chats that no one wants to remember.</span>
+                        </li>
+                        <li class="border-l-4 border-pink-400 pl-4 py-1">
+                            <strong class="text-pink-400">Quote Bank</strong>
+                            <span class="block text-slate-400 text-lg mt-0.5">Quote people like Socrates.</span>
+                        </li>
+                        <li class="border-l-4 border-green-400 pl-4 py-1">
+                            <strong class="text-green-400">Secondary Google</strong>
+                            <span class="block text-slate-400 text-lg mt-0.5">Fact-check debates instantly by scanning historical logs to prove who said what and when.</span>
+                        </li>
+                    </ul>
+                </div>
+             </div>
 
-            </div>
          </section>
 
         <!-- Live Lore -->
-         <section id="ticker" class="max-w-6xl mx-auto py-16 px-6">
-            <div class="relative bg-black border-2 border-green-500/80 p-8 font-mono text-green-400 text-lg neon-glow-green pixel-box overflow-hidden">
+         <section id="ticker" class="max-w-5xl mx-auto py-28 px-6 relative">
+
+            <!-- Header -->
+             <div class="mb-16 relative w-screen -ml-[calc((100vw-100%)/2)]">
+                <div class="bg-slate-900 border-y-2 border-r-2 border-green-400 pl-8 sm:pl-20 pr-12 py-6 shadow-[6px_6px_0px_0px_rgba(57,255,20,0.4)] relative rounded-r-lg max-w-2xl md:max-w-3xl">
+                    <h2 class="text-3xl md:text-5xl text-green-400 pixel-heading tracking-wide">
+                        Live Lore
+                    </h2>
+                </div>
+             </div>
+
+            <!-- Terminal -->
+             <div id="terminal-box" class="relative bg-black border-2 border-green-500/80 p-8 font-mono text-green-400 text-lg neon-glow-green pixel-box overflow-hidden transition-colors duration-300">
 
                 <!-- Pixel Overlay Effect -->
-                 <div class="absolute inset-0 pixel-scanlines z-20">
-                 </div>
+                 <div class="absolute inset-0 pixel-scanlines z-20"></div>
 
                 <!-- Terminal Stuff -->
                  <div id="live-lore-terminal" class="relative z-20">
@@ -281,56 +291,87 @@
                     </p>
                  </div>
 
-            </div>
+             </div>
+
          </section>
 
         <!--- Memory Lane -->
-         <section id="hall" class="max-w-6xl mx-auto py-24 px-6 text-center">
-            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 py-16 px-8">
-                <h2 class="text-2xl md:text-3xl text-pink-500 mb-4 pixel-heading">
-                    [ MEMORY LANE ]
-                </h2>
-                <p class="text-slate-400 text-xl max-w-xl mx-auto mb-10">
-                    Archived highlights straight from your server's database logs.
-                </p>
-                <div id="memory-lane-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                    <div class="text-slate-500 font-mono text-center col-span-3 py-8">
-                        // Loading memories...
+         <section id="hall" class="max-w-5xl mx-auto py-28 px-6 relative">
+
+            <!-- Header -->
+             <div class="mb-16 relative w-screen -ml-[calc((100vw-100%)/2)]">
+                <div class="bg-slate-900 border-y-2 border-r-2 border-pink-400 pl-8 sm:pl-20 pr-12 py-6 shadow-[6px_6px_0px_0px_rgba(219,39,119,0.4)] relative rounded-r-lg max-w-2xl md:max-w-3xl">
+                    <h2 class="text-3xl md:text-5xl text-pink-400 pixel-heading tracking-wide">
+                        Memory Lane
+                    </h2>
+                </div>
+             </div>
+
+            <!-- Contents -->
+             <div class="space-y-10">
+                <div class="bg-slate-900/90 border-2 border-purple-500/50 p-8 md:p-12 rounded relative rotate-1 shadow-[6px_6px_0px_0px_rgba(168,85,247,0.2)] transition-transform hover:rotate-0 duration-300">
+                    <div id="memory-lane-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                        <div class="text-slate-500 font-mono text-center col-span-full py-8">
+                            // Loading memories...
+                        </div>
                     </div>
                 </div>
-            </div>
+             </div>
+
          </section>
 
         <!-- Server Stats -->
-         <section id="stats" class="max-w-6xl mx-auto py-12 px-6">
-            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 p-8">
-                <h2 class="text-2xl md:text-3xl text-cyan-400 mb-6 pixel-heading">[ SERVER STATS ]</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-slate-950 border-2 border-slate-800 p-6">
+         <section id="stats" class="max-w-5xl mx-auto py-28 px-6 relative">
+
+            <!-- Header -->
+             <div class="mb-16 relative w-screen -ml-[calc((100vw-100%)/2)]">
+                <div class="bg-slate-900 border-y-2 border-r-2 border-cyan-400 pl-8 sm:pl-20 pr-12 py-6 shadow-[6px_6px_0px_0px_rgba(0,240,255,0.4)] relative rounded-r-lg max-w-2xl md:max-w-3xl">
+                    <h2 class="text-3xl md:text-5xl text-cyan-400 pixel-heading tracking-wide">
+                        Server Stats
+                    </h2>
+                </div>
+             </div>
+            
+            <!-- Content -->
+            <div class="bg-slate-900/95 border-2 border-cyan-500/60 p-8 md:p-12 relative rotate-1 shadow-[8px_8px_0px_0px_rgba(0,240,255,0.2)] rounded transition-transform hover:rotate-0 duration-300">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-slate-950 border-2 border-slate-800 p-6 rounded relative">
                         <p class="text-slate-400 text-sm font-mono">TOTAL CHUNKS INDEXED</p>
-                        <p id="stat-chunks" class="text-3xl text-cyan-400 font-bold font-mono">--</p>
+                        <p id="stat-chunks" class="text-3xl text-cyan-400 font-bold font-mono mt-2">--</p>
                     </div>
-                    <div class="bg-slate-950 border-2 border-slate-800 p-6">
+                    <div class="bg-slate-950 border-2 border-slate-800 p-6 rounded relative">
                         <p class="text-slate-400 text-sm font-mono">TOTAL MESSAGES RECORDED</p>
-                        <p id="stat-messages" class="text-3xl text-pink-400 font-bold font-mono">--</p>
+                        <p id="stat-messages" class="text-3xl text-cyan-400 font-bold font-mono mt-2">--</p>
                     </div>
                 </div>
-                <div class="mt-6 bg-slate-950 border-2 border-slate-800 p-6">
+                <div class="bg-slate-950 border-2 border-slate-800 p-6 rounded relative">
                     <p class="text-slate-400 text-sm font-mono mb-3">TOP YAPPER</p>
                     <ul id="stat-top-authors" class="space-y-1">
-                        <li class="text-slate-500 font-mono text-sm">// Loading yappers...</li>
+                        <li class="text-slate-500 font-mono text-sm">// Calculating yappers...</li>
                     </ul>
                 </div>
             </div>
+
          </section>
 
         <!-- Quiz -->
-         <section id="quiz" class="max-w-6xl mx-auto py-12 px-6">
-            <div class="bg-slate-900/90 pixel-box border-2 border-slate-700 p-8">
-                <h2 class="text-2xl md:text-3xl text-green-400 mb-4 pixel-heading">[ WHO SAID IT? ]</h2>
+         <section id="quiz" class="max-w-5xl mx-auto py-28 px-6 relative">
+
+            <!-- Header -->
+             <div class="mb-16 relative w-screen -ml-[calc((100vw-100%)/2)]">
+                <div class="bg-slate-900 border-y-2 border-r-2 border-green-400 pl-8 sm:pl-20 pr-12 py-6 shadow-[6px_6px_0px_0px_rgba(57,255,20,0.4)] relative rounded-r-lg max-w-2xl md:max-w-3xl">
+                    <h2 class="text-3xl md:text-5xl text-green-400 pixel-heading tracking-wide">
+                        WHO SAID IT?
+                    </h2>
+                </div>
+             </div>
+
+            <!-- Content -->
+             <div class="bg-slate-900/90 border-2 border-green-500/60 p-8 md:p-12 relative -rotate-1 shadow-[6px_6px_0px_0px_rgba(57,255,20,0.2)] rounded transition-transform hover:rotate-0 duration-300">
                 <div id="trivia-container" class="bg-slate-950 border-2 border-slate-800 p-6 rounded">
                 </div>
-            </div>
+             </div>
+
          </section>
 
      </main>
