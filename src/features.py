@@ -2,6 +2,9 @@ from datetime import datetime, timedelta
 import json
 import random
 import re
+import html
+import urllib.request
+import urllib.parse
 from collections import Counter
 from pathlib import Path
 from google.genai import types
@@ -14,7 +17,15 @@ CACHE_FILE = Path("data/cleaned/cache.json")
 
 TRIVIA_IGNORED = {"lol", "lmao", "ok", "okay", "yes", "yea", "yeah", "no", "nah", "nope", "wait"}
 
-def get_trivia() -> dict:
+def get_trivia(mode: str = "mix") -> dict:
+    """
+    mode = 'quotes'
+    mode = 'online'
+    mode = 'mix'
+    """
+    if mode == "online" or (mode == "mix" and random.random() < 0.5):
+        return get_online_trivia(category="any")
+    
     collection = get_collection()
     results = collection.get()
 
@@ -348,4 +359,356 @@ def get_patch_notes(days_window: int = 30) -> dict:
         "telemetry": stat_deltas,
         "patch_notes": patch_notes,
     }
-        
+
+def generate_shameboard(author: str, quote_text: str, channel: str, recorded_by: str) -> dict:
+    """WHen someone reacts to a message with the bookmmark emoji, ai inspects the quote and generates a roast for the hall of shame."""
+
+    prompt = (
+        f"A member (`{recorded_by}`) just pinned a quote by `{author}` in `#{channel}` "
+        f"to the server's permanent Hall of Quotes:\n\n"
+        f"\"{quote_text}\"\n\n"
+        f"Write a single, dry, one-sentence 'Museum Curator's Note' (under 30 words) in your COI Amon voice "
+        f"commenting on why this statement deserves to be immortalized as a monument to `{author}`'s questionable judgment."
+    )
+
+    try:
+        response = genai_client.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                tempermoreature=0.5,
+                max_output_tokens=250
+            )
+        )
+        curator_note = response.text.strip()
+    except Exception:
+        curator_note = "No comment. The AI was too embarrassed to roast this one."
+
+    return {
+        "author": author,
+        "quote_text": quote_text,
+        "channel": f"#{channel}",
+        "recorded_by": recorded_by,
+        "curator_note": curator_note
+    }
+
+#server feud
+def get_server_feud() -> dict:
+    """Generates family feud by surveying the json file.""" #maybe ill add other sources soon
+
+    chunks = load_chunks()
+    if not chunks:
+        return {"error": "Chunks file not found or empty."}
+
+    user_words = {}
+    late_night_counts = Counter()
+    caps_counts = Counter()
+    yap_counts = Counter()
+
+    stopwords = {
+        "the", "and", "that", "have", "for", "not", "with", "you", "this", "but",
+        "from", "they", "will", "would", "there", "their", "what", "about", "when",
+        "make", "like", "time", "just", "know", "people", "your", "some", "could",
+        "them", "then", "think", "also", "back", "after", "even", "want", "because",
+        "really", "going", "yeah", "okay", "wait", "dont", "don't","im","i'm"
+    }
+
+    for chunk in chunks:
+        is_late = False
+        try:
+            dt = datetime.strptime(chunk.get("start_time", ""), "%Y-%m-%d %H:%M")
+            is_late = (1 <= dt.hour <= 5)
+
+        except Exception:
+            pass
+
+        for line in chunk.get("text", "").split("\n"):
+            if ": " not in line:
+                continue
+            speaker, msg = line.split(": ", 1)
+            yap_counts[speaker] += 1
+            if is_late:
+                late_night_counts[speaker] += 1
+
+            alpha = [char for char in msg if char.isalpha()]
+            if len(alpha) >= 6 and sum(1 for char in alpha if char.isupper()) / len(alpha) > 0.6:
+                caps_counts[speaker] += 1
+
+            words = re.findall(r"[a-zA-Z]{5,}", msg.lower())
+            for word in words:
+                if word not in stopwords:
+                    user_words.setdefault(speaker, Counter())[word] += 1
+
+        # build candidate questions
+        surveys = []
+
+        # a. most used words
+        for user, word_counter in user_words.items():
+            if sum(word_counter.values()) >= 30 and len(word_counter) >= 5:
+                top_5 = word_counter.most_common(5)
+                surveys.append({
+                    "prompt": f"We surveyed the archive and asked: 'Name the 5 words '{user}' uses most.",
+                    "board": [{"rank": i + 1, "answer": word.upper(), "points": count} for i, (word, count) in enumerate(top_5)]
+                })
+
+        # b. most late night messages
+        if len(late_night_counts) >= 3:
+            top_owls = late_night_counts.most_common(5)
+            surveys.append({
+                "prompt": "We surveyed the archive and asked: Who has the worst sleep schedule (1am to 5am)?",
+                "board": [{"rank": i + 1, "answer": user, "points": count} for i, (user, count) in enumerate(top_owls)]
+            })
+
+        # c. most ALL CAPS messages
+        if len(caps_counts) >= 3:
+            top_ragers = caps_counts.most_common(5)
+            surveys.append({
+                "prompt": "We surveyed the archive and asked: Who has the highest blood pressure in the group?",
+                "board": [{"rank": 1 + 1, "answer": user, "points": count} for i, (user, count) in enumerate(top_ragers)]
+            })
+
+        if not surveys:
+            return {"error": "Not enough data to generate a server feud."}
+
+        picked = random.choice(surveys)
+
+        return {
+            "host_intro": "Survey says... the top answers are in! Let's see how the server voted.",
+            "prompt": picked["prompt"],
+            "top_answers": picked["board"],
+            "footer": "Thanks to the server archive for providing the data for this survey."
+        }
+
+# higher or lower game
+def get_higher_lower() -> dict:
+    """Generates a higher or lower game based on stats and stuff, and also gets some stuff from the internet for questions."""
+
+    chunks = load_chunks()
+    if not chunks:
+        return {"error": "Chunks file not found or empty."}
+
+    stat_pool = []
+    msg_counts = Counter()
+    late_counts = Counter()
+    question_counts = Counter()
+    word_counts = Counter()
+
+    funny_words = {"bro", "wait", "crazy", "sleep", "tired", "fuck", "shit", "dead", "why", "sorry"} #uhhh not too sure yet
+
+    for chunk in chunks:
+        is_late = False
+        try:
+            dt = datetime.strptime(chunk.get("start_time", ""), "%Y-%m-%d %H:%M")
+            is_late = (1 <= dt.hour <= 5)
+
+        except Exception:
+            pass
+
+        for line in chunk.get("text", "").split("\n"):
+            if ": " not in line:
+                continue
+            speaker, msg = line.split(": ", 1)
+            msg_counts[speaker] += 1
+            if is_late:
+                late_counts[speaker] += 1
+            if msg.strip().endswith("?"):
+                question_counts[speaker] += 1
+
+            t_lower = msg.lower()
+            for funny_word in funny_words:
+                if re.search(rf"\b{funny_word}\b", t_lower):
+                    word_counts[(speaker, funny_word)] += 1
+
+    for user, count in msg_counts.items():
+        stat_pool.append({"description": f"Total messages sent by {user}", "value": count})
+
+    for user, count in late_counts.items():
+        if count > 0:
+            stat_pool.append({"description": f"1am to 5am messages sent by {user}", "value": count})
+
+    for user, count in question_counts.items():
+        if count > 0:
+            stat_pool.append({"description": f"Questions asked by {user}", "value": count})
+
+    for (user, funny_word), count in word_counts.items():
+        if count > 2:
+            stat_pool.append({"description": f"Times {user} has typed the word '{funny_word}'", "value": count})
+
+    if len(stat_pool) < 2:
+        return {"error": "Not enough data to generate a higher or lower game."}
+
+    #pick two stats that have different values
+    stat1, stat2 = random.sample(stat_pool, 2)
+    attempts = 0
+    while stat1["value"] == stat2["value"] and attempts < 10:
+        stat1, stat2 = random.sample(stat_pool, 2)
+        attempts += 1
+
+    correct_call = "HIGHER" if stat2["value"] > stat1["value"] else "LOWER"
+
+    return {
+        "stat1": {
+        "label": stat1["description"],
+        "value": stat1["value"]
+        },
+        "stat2": {
+            "label": stat2["description"],
+            "hidden_value": stat2["value"]
+        },
+        "correct_answer": correct_call,
+        "prompt": (
+            f"**{stat1['description']}** is **{stat1['value']}**.\n"
+            f"Is **{stat2['description']}** HIGHER or LOWER?"
+        )
+    }
+
+#uh get stuff from the internet for trivia questions
+def fetch_json(url: str, timeout: int = 5) -> dict | list | None:
+    """Fetch json from public APIs without using requests library."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "LoreEngine/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    except Exception as e:
+        print(f"Error fetching JSON from {url}: {e}")
+        return None
+
+# another 2 truths 1 lie game but with stuff from the internet
+def get_live_web_two_truths_one_lie(topic: str = "weird world news or video game facts/news")
+    """ Uses gemini built in google search to get 2 stuffs and makes up 1 fake stuff so players have to guess which one ai made up."""
+
+    prompt = (
+        f"Use Google Search to find 2 bizarre, hard-to-believe, but 100% REAL facts or news headlines "
+        f"about: {topic}.\n"
+        f"Then, invent 1 completely FAKE fact/headline on the same topic that sounds equally plausible.\n\n"
+        f"Return your response in strict JSON format with these exact keys:\n"
+        f"{{\n"
+        f'  "real_1": "First real headline/fact",\n'
+        f'  "real_2": "Second real headline/fact",\n'
+        f'  "fake": "The fabricated headline/fact",\n'
+        f'  "explanation": "A 2-sentence dry explanation from Amon revealing the fake and citing when the two real ones happened."\n'
+        f"}}"
+    )
+
+    try:
+        response = genai_client.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.6,
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+            )
+        )
+
+        raw_output = response.text.strip()
+        if "```" in raw_output:
+            raw_output = raw_output.split("```")[1]
+            if raw_output.startswith("json"):
+                raw_output = raw_output[4:]
+        parsed = json.loads(raw_output.strip())
+
+        choices = [
+            {"text": parsed["real1"], "is_fake": False},
+            {"text": parsed["real2"], "is_fake": False},
+            {"text": parsed["fake"], "is_fake": True}
+        ]
+        random.shuffle(choices)
+        fake_num = next(i + 1 for i, choice in enumerate(choices) if choice["is_fake"])
+
+        return {
+            "topic": topic,
+            "options": [choice["text"] for choice in choices],
+            "fake_option_num": fake_num,
+            "fake_quote": parsed["fake"],
+            "ai_reveal": parsed["explanation"]
+        }
+    except Exception as e:
+        return {"error": f"web search failed: {e}"}
+
+TRIVIA_CATEGORIES = {
+    "any": None,
+    "games": 15,
+    "anime": 31,
+    "science": 17,
+    "computers": 18,
+    "math": 19,
+    "mythology": 20,
+    "general": 9,
+    "sports": 21,
+    "geography": 22,
+    "history": 23,
+    "politics": 24,
+}
+
+def get_online_trivia(category: str = "any", difficulty: str = "medium", commentary: bool = True) -> dict:
+    """
+    pulls a real mcq from opentdb.com and adds some commentary from ai. 
+    categories: 'any', 'games', 'anime', 'science', 'computers', 'math', 'mythology', 'history', 'politics', 'sports', 'geography'
+    """
+
+    category_id = TRIVIA_CATEGORIES.get(category.lower())
+    url = f"https://opentdb.com/api.php?amount=1&type=multiple"
+    if category_id:
+        url += f"&category={category_id}"
+    if difficulty in ("easy", "medium", "hard"):
+        url += f"&difficulty={difficulty}"
+
+    data = fetch_json(url)
+
+    # check if the API returned a valid response
+    if not data or data.get("response_code") != 0 or not data.get("results"):
+        backup_url = "https://the-trivia-api.com/v2/questions?limit=1"
+        backup_data = fetch_json(backup_url)
+        if not backup_data or not isinstance(backup_data, list):
+            return get_trivia()  # fallback to local trivia
+
+        item = backup_data[0]
+        question = item["question"]["text"]
+        correct_answer = item["correctAnswer"]
+        incorrect_answers = item["incorrectAnswers"]
+        category = item.get("category", "General").replace("_", " ").title()
+        difficulty = item.get("difficulty", "medium").capitalize()
+
+    else:
+        item = data["results"][0]
+        question = html.unescape(item["question"])
+        correct_answer = html.unescape(item["correct_answer"])
+        incorrect_answers = [html.unescape(ans) for ans in item["incorrect_answers"]]
+        category = html.unescape(item["category"])
+        difficulty = item["difficulty"]
+
+    options = incorrect_answers + [correct_answer]
+    random.shuffle(options)
+
+    # generate commentary using AI
+    host_remark = "Let's see if anyone here actually pays attention to the outside world..."
+    if commentary:
+        try:
+            response = genai_client.models.generate_content(
+                model="gemini-3.5-flash-lite",
+                contents=(
+                    f"Trivia Question ({category} - {difficulty}): {question}\n"
+                    f"Correct Answer: {correct_answer}\n\n"
+                    f"Write a single, dry 1-sentence host introduction to this question in your COI Amon voice."
+                    f"(DO NOT give away the answer!)."
+                ),
+                config=types.GenerateContentConfig(
+                    temperature=0.5,
+                    max_output_tokens=150,
+                )
+            )
+            host_remark = response.text.strip()
+        except Exception:
+            pass  # fallback to default host remark if AI fails
+
+    return {
+        "source": "Online Global Trivia",
+        "category": category,
+        "difficulty": difficulty,
+        "host_intro": host_remark,
+        "question": question,
+        "options": options,
+        "correct_answer": correct_answer
+    }

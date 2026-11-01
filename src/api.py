@@ -7,7 +7,7 @@ import random
 
 from ai import ask
 from database import search, get_collection
-from features import get_trivia, get_guess_game, get_two_truths_one_lie, get_patch_notes
+from features import get_trivia, get_guess_game, get_two_truths_one_lie, get_patch_notes, get_live_web_two_truths_one_lie, get_online_trivia
 from assessment import generate_stats
 
 app = FastAPI(
@@ -85,3 +85,11 @@ def server_patch_notes(days_window: int = Query(30, ge=7, le=365)):
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
+
+@app.get("/api/game/online-trivia")
+def api_online_trivia(category: str = "any", difficulty: str = "medium"):
+    return get_online_trivia(category=category, difficulty=difficulty)
+
+@app.get("/api/game/live-web-two-truths-one-lie")
+def api_live_web_two_truths_one_lie(topic: str = "weird world news or video game facts/news"):
+    return get_live_web_two_truths_one_lie(topic=topic)
