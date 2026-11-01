@@ -16,7 +16,7 @@ TRIVIA_IGNORED = {"lol", "lmao", "ok", "okay", "yes", "yea", "yeah", "no", "nah"
 
 def get_trivia() -> dict:
     collection = get_collection()
-    results = collection.get()
+    results = collection.get(limit=15000, include=["documents", "metadatas"])
 
     if not results or not results.get("documents"):
         return {"error": "No quotes found in the archive yet."}

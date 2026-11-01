@@ -34,7 +34,7 @@ class AskRequest(BaseModel):
 def get_quotes(limit: int = Query(20, ge=1, le=100)):
     """Returns quotes directly from the live ChromaDB archive."""
     collection = get_collection()
-    results = collection.get()
+    results = collection.get(limit=15000, include=["documents", "metadatas"])
     
     if not results or not results.get("documents"):
         return []
@@ -52,7 +52,7 @@ def get_quotes(limit: int = Query(20, ge=1, le=100)):
 def list_members():
     """Returns a list of all unique usernames in the live database."""
     collection = get_collection()
-    results = collection.get()
+    results = collection.get(limit=15000, include=["documents", "metadatas"])
     
     if not results or not results.get("metadatas"):
         return {"members": []}

@@ -4,6 +4,10 @@ from collections import Counter
 from google.genai import types
 from database import get_collection
 from ai import SYSTEM_PROMPT, genai_client
+import asyncio
+import time
+
+DOSSIER_CACHE = {}
 
 
 # common words ignored 
@@ -23,13 +27,18 @@ STOPWORDS = {
 
 
 
-def compute_stats(target_user: str) -> dict:
+def compute_stats(target_aliases: list) -> dict:
     """calculates behavioural stats for a given user based on the chunks"""
     collection = get_collection()
-    results = collection.get()
+
+    results = collection.get(
+        where={"messager_name": {"$in": target_aliases}},
+        limit= 15000,
+        include=["documents", "metadatas"]
+        )
 
     if not results or not results.get("documents"):
-        return {}
+        return None
 
     user_lines = []
     word_counter = Counter()
@@ -52,7 +61,7 @@ def compute_stats(target_user: str) -> dict:
         author = meta.get("messager_name", "Unknown User")
 
         # Process quotes from the target user
-        if target_user.lower() not in author.lower():
+        if not any(alias.lower() in author.lower() for alias in target_aliases):
             continue
 
         msg = docs[i].strip()
@@ -76,7 +85,7 @@ def compute_stats(target_user: str) -> dict:
     caps_pct = round((caps_counter / len(user_lines)) * 100, 1)
 
     return {
-        "username": target_user,
+        "username": target_aliases,
         "total_lines_indexed": len(user_lines),
         "avg_line_length": avg_len,
         "caps_pct": f"{caps_pct}%",
@@ -87,42 +96,77 @@ def compute_stats(target_user: str) -> dict:
         "sample_logs": user_lines[-5:]
     }
 
-def generate_stats(username: str) -> dict:
-    """Generates psychological evaluation based on live stats."""
-    stats = compute_stats(username)
-    
-    if not stats:
-        return {"error": f"No data found for user '{username}'."}
+async def generate_stats(aliases: list, primary_name: str) -> dict:
 
-    samples_str = "\n\n---\n\n".join(stats.pop("sample_logs"))
+    if primary_name in DOSSIER_CACHE:
+        return DOSSIER_CACHE[primary_name]
+
+    print(f"\n[DEBUG] Fetching chromaDB for {primary_name}")
+    db_start = time.time()
+
+    stats = await asyncio.to_thread(compute_stats, aliases)
+
+    db_end = time.time()
+    print(f"[DEBUG] chromaDB fetch took: {db_end - db_start:.2f} seconds")
+
+    if not stats:
+        return{"error": f"No data found for user '{primary_name}'."}
+
+    stats["username"] = primary_name
+
+    sample_logs = stats.pop("sample_logs", [])
+    samples_str = "\n\n---\n\n".join(sample_logs[:15])
 
     prompt = (
-        f"Write a concise, two-paragraph psychological dossier on '{stats['username']}' based on your observations.\n\n"
+        f"Write a concise, two-paragraph psychological dossier on '{primary_name}' based on your observations.\n\n"
         f"[BEHAVIORAL METRICS]\n"
-        f"- ALL CAPS CRASHOUT Rate: {stats['caps_pct']}\n"
-        f"- Most Overused Words: {', '.join(stats['top_words'])}\n\n"
+        f"- ALL CAPS CRASHOUT Rate: {stats.get('caps_pct', '0%')}\n"
+        f"- Most Overused Words: {', '.join(stats.get('top_words', []))}\n\n"
         f"[SAMPLE CONVERSATIONS WITNESSED]\n{samples_str}\n\n"
         f"Paragraph 1: Dissect their vocabulary and sentence structure with dry, clinical amusement.\n"
         f"Paragraph 2: Comment on their actual habits shown in the sample conversations and deliver a final verdict."
-    )   
+    )
 
-    try:
-        response = genai_client.models.generate_content(
-            model="gemini-3.5-flash-lite",
-            contents= prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                temperature=0.45, 
-                max_output_tokens=1500
+    print(f"[DEBUG] Sending {len(prompt)} characters to gemini")
+    ai_start = time.time()
+    evaluation = None
+
+    for attempt in range(3):
+        try:
+            print(f"[DEBUG] Attempt {attempt + 1}")
+            response = await asyncio.wait_for(
+                genai_client.aio.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                            temperature=0.45,
+                            max_output_tokens=5000
+                    )
+                ),
+                timeout=4.0
             )
-        )
-        evaluation = response.text
+            evaluation = response.text
 
-    except Exception as e:
-        evaluation = f"An error occurred while generating the evaluation: {str(e)}"
+        except asyncio.TimeoutError:
+            print(f"[DEBUG] Attempt {attempt + 1} timedout")
 
-    return {
-        "subject": stats["username"],
+        except Exception as e:
+            evaluation = f"An error occured while generating evaluation"
+            print(f"[DEBUG] Ai hard error: {str(e)}")
+            break
+
+    if not evaluation:
+        evaluation = "Scam Altman stole all of google service wacao"
+
+    ai_end = time.time()
+    print(f"[DEBUG] AI took: {ai_end - ai_start:.2f} seconds")
+
+    final_report = {
+        "subject": primary_name,
         "metrics": stats,
         "evaluation": evaluation
     }
+    DOSSIER_CACHE[primary_name] = final_report
+
+    return final_report
