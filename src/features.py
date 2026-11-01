@@ -77,7 +77,7 @@ def get_trivia() -> dict:
         }
     }
 
-def guess_game() -> dict:
+def get_guess_game() -> dict:
     chunks = load_chunks()
     if not chunks:
         return {"error": "Chunks file not found or empty."}

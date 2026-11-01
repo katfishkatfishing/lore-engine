@@ -7,7 +7,7 @@ import random
 
 from ai import ask
 from database import search, get_collection
-from features import get_trivia, guess_game, get_two_truths_one_lie, get_patch_notes
+from features import get_trivia, get_guess_game, get_two_truths_one_lie, get_patch_notes
 from assessment import generate_stats
 
 app = FastAPI(
@@ -65,7 +65,7 @@ def list_members():
 @app.get("/api/game/guess")
 def play_guess_game():
     """Returns a redacted convo where players guess who and what was said."""
-    result = guess_game()
+    result = get_guess_game()
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
