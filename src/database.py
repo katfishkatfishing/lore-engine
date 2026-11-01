@@ -1,10 +1,18 @@
 import os
+import json
 import chromadb
+from pathlib import Path
 from chromadb.utils import embedding_functions
 from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+CHUNKS_FILE = BASE_DIR / "data" / "cleaned" / "organisedGoesHere.json"
+CHROMA_DIR = BASE_DIR / "data" / "chromadb"
+COLLECTION_NAME = "buku_teks_sejarah"
+BATCH_SIZE = 85
 
 # initialise 
 api_key = os.getenv("GEMINI_API_KEY")
@@ -55,6 +63,17 @@ def search(query: str, top_k: int = 5) -> list[dict]:
         })
 
     return candidates
+
+def load_chunks() -> list[dict]:
+    """Loads the cleaned lore chunks from the JSON file."""
+    if not CHUNKS_FILE.exists():
+        print(f"Error: {CHUNKS_FILE} not found. Run cleanData.py first.")
+        return []
+
+    with open(CHUNKS_FILE, "r", encoding="utf-8") as f:
+        chunks = json.load(f)
+
+    return chunks
 
 if __name__ == "__main__":
 
