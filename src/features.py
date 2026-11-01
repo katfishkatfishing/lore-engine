@@ -5,90 +5,85 @@ import re
 from collections import Counter
 from pathlib import Path
 from google.genai import types
-
+from database import get_collection
 from src.api import load_chunks
 from src.database import genai_client, search
 from src.ai import SYSTEM_PROMPT
 
-CHUNKS_FILE = Path(__file__).parent / "data" / "cleaned" / "organisedGoesHere.json"
+CHUNKS_FILE = Path(__file__).parent/"data"/"cleaned"/"organisedGoesHere.json"
 CACHE_FILE = Path("data/cleaned/cache.json")
 
-TRIVIA_IGNORED = {
-    "lol", "lmao", "ok", "okay", "yes", "yea", "yeah", "no", "nah", "nope", "wait"
-}
+TRIVIA_IGNORED = {"lol", "lmao", "ok", "okay", "yes", "yea", "yeah", "no", "nah", "nope", "wait"}
 
 def get_trivia() -> dict:
-    """ scans chunks for quotes that are suitable for trivia questions. Generates a 4 option mcq of 'Who said it?"""
+    collection = get_collection()
+    results = collection.get()
 
-    if not CHUNKS_FILE.exists():
-        return {"error": "Chunks file not found."}
+    if not results or not results.get("documents"):
+        return {"error": "No quotes found in the archive yet."}
 
-    with open(CHUNKS_FILE, "r", encoding="utf-8") as f:
-        chunks = json.load(f)
+    docs = results["documents"]
+    metas = results["metadatas"]
+    ids = results["ids"]
 
     all_authors = set()
     candidate_quotes = []
 
-    for chunk in chunks:
-        for author in chunk.get("authors", []):
-            all_authors.add(author)
+    # parse chromadb docs
+    for i in range(len(docs)):
+        quote = docs[i].strip()
+        meta = metas[i] if metas and metas[i] else {}
 
-        lines = chunk.get("text", "").split("\n")
-        for line in lines:
-            if ": " not in line:
-                continue
-            speaker, quote = line.split(": ", 1)
-            quote = quote.strip()
+        if isinstance(meta, str):
+            try:
+                meta = json.loads(meta.replace("'", "'"))
+            except:
+                meta = {}
 
-            if not (35 <= len(quote) <= 180):
-                continue
-            if quote.lower() in TRIVIA_IGNORED:
-                continue
+        author = meta.get("messager_name", "Unknown User")
+        channel = meta.get("channel", "general")
 
-            candidate_quotes.append({
-                "quote": quote,
-                "correct_author": speaker,
-                "timestamp": chunk.get("start_time", "Unknown Date"),
-                "channel": chunk.get("channel",  "general"),
-                "chunk_id": chunk.get("id"),
-                "full_context": chunk.get("text")
-            })
+        all_authors.add(author)
+
+        if not (15 <= len(quote) <= 180) or quote.lower() in TRIVIA_IGNORED:
+            continue
+
+        candidate_quotes.append({
+            "quote": quote,
+            "author": author,
+            "channel": channel,
+            "chunk_id": ids[i]
+        })
 
     if not candidate_quotes:
-        return {"error": "No suitable quotes found for trivia."}
+        return{"error": "Not enough suitable quotes found for trivia yet."}
 
     picked = random.choice(candidate_quotes)
-    correct = picked["correct_author"]
+    correct = picked["author"]
 
-    other_authors = [author for author in all_authors if author != correct]
+    other_authors = list(all_authors - {correct})
     wrong_authors = random.sample(other_authors, min(3, len(other_authors)))
 
     options = wrong_authors + [correct]
     random.shuffle(options)
 
-    return {
+    return{
         "question_id": picked["chunk_id"],
         "question": f'Who said: "{picked["quote"]}"',
         "options": options,
         "correct_answer": correct,
         "hint": {
-            "channel": f"Channel: #{picked['channel']}",
-            "date": f"Date: {picked['timestamp']}",
-        },
-        "context": {
-            "timestamp": picked["timestamp"],
-            "full_convo": picked["full_context"]
+            "channel": f"#{picked['channel']}",
+            "date": "Recent"
         }
     }
 
-def get_guess_game() -> dict:
-    """picks an active multi person conversation chunk, hides the people as Person A, B, C, etc. and has ai redact the central topic so players have to guess who and what the convo is about."""
-
+def guess_game() -> dict:
     chunks = load_chunks()
     if not chunks:
         return {"error": "Chunks file not found or empty."}
 
-    #filter for chunks with multiple authors
+    # filter chunks with multiple authors
     candidates = [
         chunk for chunk in chunks
         if chunk.get("message_count", 0) >= 5 and len(chunk.get("authors", [])) >= 2
@@ -98,9 +93,8 @@ def get_guess_game() -> dict:
         return {"error": "No suitable multi-person conversation chunks found."}
 
     picked = random.choice(candidates)
-    raw_lines = [line for line in picked.get("text", "").splt("\n") if ": " in line][:10]
+    raw_lines = [line for line in picked.get("text", "").split("\n") if ": " in line][:10]
 
-    #replace authors with Person A, B, C, etc.
     author_map = {}
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     anonymized_lines = []
@@ -113,17 +107,18 @@ def get_guess_game() -> dict:
 
         anon_line = f"{author_map[speaker]}: {content}"
 
-        #strip any mentions of the original authors in the content
+        # remove mention of author in sentence
         for original, anon in author_map.items():
             anon_line = anon_line.replace(original, f"[{anon}]")
         anonymized_lines.append(anon_line)
 
     anon_transcript = "\n".join(anonymized_lines)
 
- #use ai to redact the topic of the conversation
-
     prompt = (
-
+        f"Read this anonymized chat transcript:\n\n{anon_transcript}\n\n"
+        "Provide your output exactly in this format:\n"
+        "[Redacted Chat Text]\n"
+        "SUMMARY: [One short, funny sentence summarizing what they are talking about without using specific names]"
     )
 
     try:
@@ -148,8 +143,7 @@ def get_guess_game() -> dict:
     except Exception as e:
         return {"error": f"AI generation failed: {str(e)}"}
 
-    # invert the author_map to get Person A -> original author
-    reveal_indentities = {v: k for k, v in author_map.items()}
+    reveal_identities = {v: k for k, v in author_map.items()}
 
     return {
         "chunk_id": picked.get("id"),
@@ -157,18 +151,17 @@ def get_guess_game() -> dict:
         "channel": f"#{picked.get('channel', 'general')}",
         "redacted_chat": redacted_chat,
         "topic_summary": topic_summary,
-        "reveal_identities": reveal_indentities,
+        "reveal_identities": reveal_identities,
         "original_chat": "\n".join(raw_lines)
     }
 
-# two truths one lie, 2 real quotes 1 made by ai hopefully works
+
 def get_two_truths_one_lie(username: str = None) -> dict:
-    """picks a user, gets 2 real quotes and ai generate one fake quote in their style."""
     chunks = load_chunks()
     if not chunks:
         return {"error": "Chunks file not found or empty."}
 
-    # gather eligible lines per user
+    # gather eligible lines
     author_lines = {}
     for chunk in chunks:
         for line in chunk.get("text", "").split("\n"):
@@ -179,7 +172,7 @@ def get_two_truths_one_lie(username: str = None) -> dict:
             if 30 <= len(message) <= 140 and not message.startswith("@") and "https" not in message and "http" not in message:
                 author_lines.setdefault(speaker, []).append(message)
 
-    # filter authors with at least 10 eligible lines
+    # filter authors
     eligible_authors = {author: lines for author, lines in author_lines.items() if len(lines) >= 10}
     if not eligible_authors:
         return {"error": "No eligible authors with enough lines found."}
@@ -190,14 +183,15 @@ def get_two_truths_one_lie(username: str = None) -> dict:
             if username.lower() in author.lower():
                 matched_user = author
                 break
-            if not matched_user:
-                return {"error": f"Not enough data for user '{username}' to generate a quote."}
-            else:
-                matched_user = random.choice(list(eligible_authors.keys()))
+                
+        if not matched_user:
+            return {"error": f"Not enough data for user '{username}' to generate a quote."}
+    else:
+        matched_user = random.choice(list(eligible_authors.keys()))
 
-            samples = random.sample(eligible_authors[matched_user], min(20, len(eligible_authors[matched_user])))
-            real_quotes = samples[:2]
-            style_reference = "\n".join([f"- {quote}" for quote in samples[2:]])
+    samples = random.sample(eligible_authors[matched_user], min(20, len(eligible_authors[matched_user])))
+    real_quotes = samples[:2]
+    style_reference = "\n".join([f"- {quote}" for quote in samples[2:]])
 
             prompt = (
                 f"Study these real Discord messages from '{matched_user}':\n{style_reference}\n\n"
@@ -206,27 +200,27 @@ def get_two_truths_one_lie(username: str = None) -> dict:
                 f"Output ONLY the raw fake message text, with no quotation marks or explanation."
             )   
 
-            try:
-                response = genai_client.models.generate_content(
-                    model="gemini-3.5-flash-lite",
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.5,
-                        max_output_tokens=400
-                    )
-                )
-                fake_quote = response.text.strip().strip('"').strip("'")
-            except Exception as e:
-                return {"error": f"AI generation failed: {str(e)}"}
+    try:
+        response = genai_client.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.5,
+                max_output_tokens=400
+            )
+        )
+        fake_quote = response.text.strip().strip('"').strip("'")
+    except Exception as e:
+        return {"error": f"AI generation failed: {str(e)}"}
 
-            options = [
-                {"text": real_quotes[0], "is_fake": False},
-                {"text": real_quotes[1], "is_fake": False},
-                {"text": fake_quote, "is_fake": True}
-            ]
-            random.shuffle(options)
+    options = [
+        {"text": real_quotes[0], "is_fake": False},
+        {"text": real_quotes[1], "is_fake": False},
+        {"text": fake_quote, "is_fake": True}
+    ]
+    random.shuffle(options)
 
-            fake_index = next(i for i, option in enumerate(options) if option["is_fake"])
+    fake_index = next(i for i, option in enumerate(options) if option["is_fake"])
 
             return {
                 "username": matched_user,

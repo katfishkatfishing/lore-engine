@@ -1,5 +1,5 @@
 from google.genai import types
-from src.database import genai_client, search
+from database import genai_client, search
 from collections import deque
 
 SYSTEM_PROMPT = """
