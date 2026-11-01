@@ -7,7 +7,7 @@ import random
 
 from ai import ask
 from database import search, get_collection
-from features import get_trivia
+from features import get_trivia, guess_game, get_two_truths_one_lie, get_patch_notes
 from assessment import generate_stats
 
 app = FastAPI(
@@ -61,3 +61,27 @@ def list_members():
         meta.get("messager_name") for meta in results["metadatas"] if meta and meta.get("messager_name")
     )))
     return {"members": members}
+
+@app.get("/api/game/guess")
+def play_guess_game():
+    """Returns a redacted convo where players guess who and what was said."""
+    result = guess_game()
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/game/two_truths_one_lie")
+def play_two_truths_one_lie(username: Optional[str] = Query(None, description="Optional user selection")):
+    """Returns 2 real quotes and 1 fake ai generated quote for a member."""
+    result = get_two_truths_one_lie(username)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.get("/api/patch-notes")
+def server_patch_notes(days_window: int = Query(30, ge=7, le=365)):
+    """Generates game style patch notes based on server activity."""
+    result = get_patch_notes(days_window)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result

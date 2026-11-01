@@ -193,12 +193,12 @@ def get_two_truths_one_lie(username: str = None) -> dict:
     real_quotes = samples[:2]
     style_reference = "\n".join([f"- {quote}" for quote in samples[2:]])
 
-            prompt = (
-                f"Study these real Discord messages from '{matched_user}':\n{style_reference}\n\n"
-                f"Write ONE single fabricated message (between 35 and 130 characters) that '{matched_user}' "
-                f"never actually said, but matches their exact capitalization, punctuation, slang, and typical complaints. "
-                f"Output ONLY the raw fake message text, with no quotation marks or explanation."
-            )   
+    prompt = (
+        f"Study these real Discord messages from '{matched_user}':\n{style_reference}\n\n"
+        f"Write ONE single fabricated message (between 35 and 130 characters) that '{matched_user}' "
+        f"never actually said, but matches their exact capitalization, punctuation, slang, and typical complaints. "
+        f"Output ONLY the raw fake message text, with no quotation marks or explanation."
+    )   
 
     try:
         response = genai_client.models.generate_content(
@@ -222,13 +222,13 @@ def get_two_truths_one_lie(username: str = None) -> dict:
 
     fake_index = next(i for i, option in enumerate(options) if option["is_fake"])
 
-            return {
-                "username": matched_user,
-                "options": [choice["text"] for choice in options],
-                "fake_option_num": fake_index + 1,
-                "fake_quote": fake_quote,
-                "real_quotes": real_quotes,
-            }
+    return {
+        "username": matched_user,
+        "options": [choice["text"] for choice in options],
+        "fake_option_num": fake_index + 1,
+        "fake_quote": fake_quote,
+        "real_quotes": real_quotes,
+    }
 
 # generate like patch notes for all members
 def get_patch_notes(days_window: int = 30) -> dict:
