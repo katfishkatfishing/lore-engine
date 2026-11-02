@@ -215,3 +215,84 @@ async def generate_impersonation(aliases: list, primary_name: str, topic: str) -
         return "SCAM ALTMAN CHUGGING ALL THE SERVER AHHHHHHH"
 
     return result
+
+
+
+async def generate_receipts(aliases: list, primary_name: str, claim: str) -> str:
+    from database import get_collection
+    collection = get_collection()
+
+    search_prompt = (
+        f"User claims: '{claim}'."
+        f"Write a 3-5 word search query to find chat logs where they are DOING THE EXACT OPPOSITE."
+        f"Output ONLY the seach words."
+    )
+
+    try:
+        query_res = await asyncio.wait_for(
+            genai_client.aio.models.generate_content(
+                model="gemini-3.5-flash-lite",
+                contents=search_prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    max_output_tokens=20
+                )
+            ),
+            timeout= 4.0
+        )
+        search_term = query_res.text.strip()
+
+    except Exception:
+        search_term = claim
+
+    def fetch_evidence():
+        return collection.query(
+            query_texts=[search_term],
+            n_results= 10,
+            where={"messager_name": {"$in": aliases}},
+            include=["documents"]
+            )
+
+    results = await asyncio.to_thread(fetch_evidence)
+
+    if not results or not results.get("documents") or not results["documents"][0]:
+        return f"Wow might be right"
+
+    docs = results["documents"][0]
+    evidence_str = "\n".join([f"- \"{docs}" for doc in docs])
+
+    roast_prompt = (
+        f"User '{primary_name}' made the bold claim: \"{claim}\".\n\n"
+        f"Here is their actual chat history pulled from the server archive:\n{evidence_str}\n\n"
+        f"Write a dry, brutal courtroom-style takedown (2-3 sentences) in your COI Amon voice. "
+        f"You MUST directly quote one or two of their historical messages as 'receipts' to expose their hypocrisy. "
+        f"Output only the final verdict."
+    )
+
+    result = None
+
+    for attempt in range(3):
+        try:
+            response = await asyncio.wait_for(
+                genai_client.aio.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                    contents= roast_prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        temperature=0.6,
+                        max_output_tokens=250
+                    )
+                ),
+                timeout= 5.0
+            )
+            result = response.text.strip()
+            break
+        except asyncio.TimeoutError:
+            continue
+        except Exception as e:
+            return f"Ai error: {str(e)} "
+
+    if not result:
+        return "Can use Palantir against Scam Altman?"
+    
+    return result

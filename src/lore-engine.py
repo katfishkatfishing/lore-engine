@@ -12,7 +12,6 @@ import re
 from datetime import datetime, timedelta
 from ai import ask
 from features import get_trivia
-from assessment import generate_stats
 from src.wordle import game_state
 import traceback
 import time
@@ -21,7 +20,7 @@ import random
 import asyncio
 from google.genai import types
 from src.database import genai_client
-from src.assessment import generate_stats, generate_impersonation
+from src.assessment import generate_stats, generate_impersonation, generate_receipts
 from src.ai import SYSTEM_PROMPT
 
 # clean up Hugging Face warning spam in terminal
@@ -802,6 +801,24 @@ async def tldr_cmd(interaction: discord.Interaction, limit: int = 50):
         except Exception as e:
             await interaction.followup.send(f"📜 **TL;DR ({limit} messages):**\n\n> {summary}")
 
+# 16./receipt
+@app_commands.command("receipts", description = "UNO REVERSE!!!")
+async def receipts_cmd(interaction: discord.Interaction, target: discord.Member, claim: str):
+
+    await interaction.response.defer()
+    await interaction.channel.typing()
+
+    alias_list = [target.name, target.display_name]
+    if target.nick:
+        alias_list.append(target.nick)
+
+    response_text = await generate_receipts(alias_list, target.display_name, claim)
+
+    await interaction.followup.send(
+        f"**The Claim:** *\"{claim}\"*\n"
+        f"**Target:** {target.mention}\n\n"
+        f"{response_text}"
+    )
 
 # start the bot
 bot.run(TOKEN)
