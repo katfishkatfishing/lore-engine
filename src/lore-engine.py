@@ -22,7 +22,7 @@ import asyncio
 from google.genai import types
 from src.database import genai_client
 from src.assessment import generate_stats, generate_impersonation
-
+from src.ai import SYSTEM_PROMPT
 
 # clean up Hugging Face warning spam in terminal
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
@@ -752,6 +752,56 @@ async def impersonate_cmd(interaction: discord.Interaction, target: discord.Memb
     await interaction.followup.send(
         f"**{target.display_name}**'s thoughts on **{topic}**:\n\n> {response_text}"
     )
+
+# 15. /tldr
+@app_commands.command(name="tldr", description="Summarizes the recent chaos in this channel")
+async def tldr_cmd(interaction: discord.Interaction, limit: int = 50):
+
+    await interaction.response.defer()
+    await interaction.channel.tying()
+
+    # scrape recent msg
+    messages = []
+
+    async for msg in interaction.channel.history(limit=limit):
+        if msg.content.strip and not msg.author.bot:
+            messages.append(f"{msg.author.display_name}: {msg.content}")
+
+        if len(messages) < 5:
+            await interaction.followup.send("❌ I think everone ded in here. They in nania?")
+            return
+        messages.reverse()
+        chat_log = "\n".join(messages)
+
+        prompt = (
+            f"Read this revent chat log from a Discord channel:\n\n{chat_log}\n\n"
+            f"Write a sarcastic 2-5 sentence that summarize whatever was said."
+            f"Mock their trivial arguments or erratic behaviour too if any."
+            f"Output ONLY the summary text."
+        )
+
+        try:
+            response = await asyncio.wait_for(
+                genai_client.aio.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                    contents = prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        temperature=0.6,
+                        max_output_tokens=250
+
+                    )
+                ),
+                timeout=5.0
+            )
+            summary = response.text.strip()
+
+        except asyncio.TimeoutError:
+            await interaction.followup.send(F"❌ Ai error: {str(e)}")
+            return
+        except Exception as e:
+            await interaction.followup.send(f"📜 **TL;DR ({limit} messages):**\n\n> {summary}")
+
 
 # start the bot
 bot.run(TOKEN)
