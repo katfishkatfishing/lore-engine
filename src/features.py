@@ -377,7 +377,7 @@ def generate_shameboard(author: str, quote_text: str, channel: str, recorded_by:
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
-                tempermoreature=0.5,
+                temperature=0.5,
                 max_output_tokens=250
             )
         )
@@ -576,13 +576,14 @@ def fetch_json(url: str, timeout: int = 5) -> dict | list | None:
         return None
 
 # another 2 truths 1 lie game but with stuff from the internet
-def get_live_web_two_truths_one_lie(topic: str = "weird world news or video game facts/news")
-    """ pulls 2 real bizarre headlines/facts from the internet and asks ai to generate a fake one in the same style, then shuffles them for the user to guess."""
-
+def get_live_web_two_truths_one_lie(topic: str = "weird world news or video game facts/news"):
+    
     real_pool = fetch_web_facts(topic)
 
     if len(real_pool) < 2:
-        real_two = random.sample(real_pool, 2)
+        return{"error:" "Not enuf facts pulled"}
+
+    real_two = random.sample(real_pool, 2)
         
 
     prompt = (
@@ -742,7 +743,7 @@ def fetch_web_facts(topic: str= "") -> list[str]:
             reddit_data = json.loads(response.read().decode("utf-8"))
             posts = reddit_data.get("data", {}).get("children", [])
             for post in posts:
-                title = post.get("data", {}).get("children", [])
+                title = post.get("data", {}).get("title", "")
 
                 for prefix in {"TIL that ", "TIL ", "Today I learned that ", "Today I learned "}:
                     if title.startswith(prefix):

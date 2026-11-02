@@ -15,6 +15,12 @@ from features import get_trivia
 from assessment import generate_stats
 from src.wordle import game_state
 import traceback
+import time
+import difflib
+import random
+import asyncio
+from google.genai import types
+from src.database import genai_client
 
 
 # clean up Hugging Face warning spam in terminal
@@ -653,6 +659,81 @@ async def nerdle_start(interaction: discord.Interaction):
     else:
         await interaction.followup.send("⚠️ **Game is already running woi!** Use `/nerdle status` to see the board.")
 
+# 14./type_test
+@app_commands.command(name="type", description="Test your typing speed")
+async def type_test(interaction: discord.Interaction):
+
+    await interaction.response.defer()
+
+    target_sentence = ""
+
+    try:
+        response = await asyncio.wait_for(
+            genai_client.aio.models.generate_content(
+                model = "gemini-3.5-flash-lite",
+                contents=(
+                    "Write a single sentence completely unique, tongue-twister-like and chaotic sentence (around 12-20 words) to be used as typing speed test."
+                    "Output ONLY the raw sentence text. No quotation marks, no emojis, no markdown."
+                ),
+                config=types.GenerateContentConfig(
+                    temperature= 0.9,
+                    max_output_tokens= 60
+                )
+
+            ),
+            timeout= 4.0
+        )
+        target_sentence = response.text.strip().strip('"').strip("'")
+
+    except Exception as e:
+        # just in case scam altman stole all the server
+        fallbacks = [
+            "The quick brown fox jumped over the remarkably lazy developer who was sleeping.",
+            "My mechanical keyboard is louder than my internal monologue and twice as annoying."
+        ]
+        target_sentence = random.choice(fallbacks)
+
+        # just in case copy paste
+        anti_cheat_text = "".join(char + "\u200b" for char in target_sentence)
+
+        await interaction.followup.send(
+            f"**Typing Test!** Type the following as fast as u can booooooi"
+            F"Timer starts NOOOOOOOOOW!\n\n> {anti_cheat_text}"
+        )
+
+        start_time = time.time()
+
+        def check(m):
+            return m.author == interaction.user and m.channel == interaction.channel
+
+        try:
+            msg = await bot.wait_for('message', check=check, timeout= 60.0)
+        except asyncio.TimeoutError:
+            await interaction.channel.send(f"⏳ {interaction.user.mention}, Tik Tok slow poke game over")
+            return
+
+        end_time = time.time()
+        time_taken = end_time - start_time
+        user_input = msg.content.strip()
+
+        word_count = len(target_sentence)/ 5
+        minutes = time_taken / 60
+        wpm = round(word_count / minutes)
+
+        matcher = difflib.SequenceMatcher(None, target_sentence, user_input)
+        accuracy = round(matcher.ratio() * 100, 2)
+
+        verdict = "🔥 Cookin'!" if accuracy == 100 else "🤡 So many typo, u asian or not? GO back to school!" if accuracy > 85 else "💀 Folded under 0 pressure"
+        if accuracy < 10:
+            verdict = "🚨 CHEATER CHEATER PANTS ON FIRE"
+            wpm = 0
+
+        await msg.reply(
+            f"⏱️ **Time:** {time_taken:.2f} seconds\n"
+            f"⌨️ **Speed:** {wpm} WPM\n"
+            f"🎯 **Accuracy:** {accuracy}%\n"
+            f"*{verdict}*"
+        )
 
 # start the bot
 bot.run(TOKEN)
