@@ -170,3 +170,48 @@ async def generate_stats(aliases: list, primary_name: str) -> dict:
     DOSSIER_CACHE[primary_name] = final_report
 
     return final_report
+
+async def generate_impersonation(aliases: list, primary_name: str, topic: str) -> str:
+    stats = await asyncio.to_thread(compute_stats, aliases)
+
+    if not stats or not stats.get("ssample_logs"):
+        return f"❌ Not enuf chat history from {primary_name} to impersonate"
+
+    sample_logs = stats["sample_logs"]
+    samples_str = "\n".join(sample_logs[:30])
+
+    prompt = (
+        f"Study the following Discord chat history of the user '{primary_name}':\n\n"
+        f"{samples_str}\n\n"
+        f"Write a 2 to 3 sentence statement about '{topic}' exactly in their voice. "
+        f"Match their punctuation, capitalization habits, slang, and general vibe perfectly. "
+        f"Output ONLY the raw impersonation text, without any quotation marks or introductions."
+    )
+
+    result = None
+
+    for attempt in range(3):
+        try:
+            response = await asyncio.wait_for(
+                genai_client.aio.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                    contents = prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        temperature=0.85,
+                        max_output_tokens=150
+                    )
+                ),
+                timeout = 4.0
+            )
+            result = response.text.strip()
+            break
+        except asyncio.TimeoutError:
+            continue
+        except Exception as e:
+            return f"❌ Ai error: {str(e)}"
+
+    if not result:
+        return "SCAM ALTMAN CHUGGING ALL THE SERVER AHHHHHHH"
+
+    return result

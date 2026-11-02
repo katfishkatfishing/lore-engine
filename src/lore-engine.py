@@ -21,6 +21,7 @@ import random
 import asyncio
 from google.genai import types
 from src.database import genai_client
+from src.assessment import generate_stats, generate_impersonation
 
 
 # clean up Hugging Face warning spam in terminal
@@ -734,6 +735,23 @@ async def type_test(interaction: discord.Interaction):
             f"🎯 **Accuracy:** {accuracy}%\n"
             f"*{verdict}*"
         )
+
+# 15./impersonate
+@app_commands.command(name="impersonate", description="The Mimic?!?!")
+async def impersonate_cmd(interaction: discord.Interaction, target: discord.Member, topic: str):
+
+    await interaction.response.defer()
+    await interaction.channel.typing()
+
+    alias_list = [target.name, target.display_name]
+    if target.nick:
+        alias_list.append(target.nick)
+
+    response_text = await generate_impersonation(alias_list, target.display_name, topic)
+
+    await interaction.followup.send(
+        f"**{target.display_name}**'s thoughts on **{topic}**:\n\n> {response_text}"
+    )
 
 # start the bot
 bot.run(TOKEN)
