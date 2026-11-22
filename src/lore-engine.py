@@ -660,7 +660,7 @@ async def nerdle_start(interaction: discord.Interaction):
         await interaction.followup.send("⚠️ **Game is already running woi!** Use `/nerdle status` to see the board.")
 
 # 14./type_test
-@app_commands.command(name="type", description="Test your typing speed")
+@bot.tree.command(name="type", description="Test your typing speed")
 async def type_test(interaction: discord.Interaction):
 
     await interaction.response.defer()
@@ -672,12 +672,12 @@ async def type_test(interaction: discord.Interaction):
             genai_client.aio.models.generate_content(
                 model = "gemini-3.5-flash-lite",
                 contents=(
-                    "Write a single sentence completely unique, tongue-twister-like and chaotic sentence (around 12-20 words) to be used as typing speed test."
+                    "Write a single sentence completely unique, tongue-twister-like and chaotic sentence (around 20-35 words) to be used as typing speed test."
                     "Output ONLY the raw sentence text. No quotation marks, no emojis, no markdown."
                 ),
                 config=types.GenerateContentConfig(
                     temperature= 0.9,
-                    max_output_tokens= 60
+                    max_output_tokens= 80
                 )
 
             ),
@@ -697,8 +697,8 @@ async def type_test(interaction: discord.Interaction):
         anti_cheat_text = "".join(char + "\u200b" for char in target_sentence)
 
         await interaction.followup.send(
-            f"**Typing Test!** Type the following as fast as u can booooooi"
-            F"Timer starts NOOOOOOOOOW!\n\n> {anti_cheat_text}"
+            f"**Typing Test!** Type the following as fast as u can booooooi\n"
+            f"Timer starts NOOOOOOOOOW!\n\n> {anti_cheat_text}"
         )
 
         start_time = time.time()
@@ -736,28 +736,33 @@ async def type_test(interaction: discord.Interaction):
         )
 
 # 15./impersonate
-@app_commands.command(name="impersonate", description="The Mimic?!?!")
+@bot.tree.command(name="impersonate", description="The Mimic?!?!")
 async def impersonate_cmd(interaction: discord.Interaction, target: discord.Member, topic: str):
 
     await interaction.response.defer()
     await interaction.channel.typing()
 
-    alias_list = [target.name, target.display_name]
-    if target.nick:
-        alias_list.append(target.nick)
+    base_names = [target.display_name, target.name, target.global_name, target.nick]
+    aliases = set()
+    for name in base_names:
+        if name:
+            aliases.add(name)
+            aliases.add(name.lower())
+            aliases.add(name.capitalize())
+        alias_list = list(aliases)
 
-    response_text = await generate_impersonation(alias_list, target.display_name, topic)
+    response_text = await generate_impersonation(alias_list, target.display_name, topic, str(target.id))
 
     await interaction.followup.send(
         f"**{target.display_name}**'s thoughts on **{topic}**:\n\n> {response_text}"
     )
 
-# 15. /tldr
-@app_commands.command(name="tldr", description="Summarizes the recent chaos in this channel")
+# 16. /tldr
+@bot.tree.command(name="tldr", description="Summarizes the recent chaos in this channel")
 async def tldr_cmd(interaction: discord.Interaction, limit: int = 50):
 
     await interaction.response.defer()
-    await interaction.channel.tying()
+    await interaction.channel.typing()
 
     # scrape recent msg
     messages = []
@@ -766,43 +771,42 @@ async def tldr_cmd(interaction: discord.Interaction, limit: int = 50):
         if msg.content.strip and not msg.author.bot:
             messages.append(f"{msg.author.display_name}: {msg.content}")
 
-        if len(messages) < 5:
-            await interaction.followup.send("❌ I think everone ded in here. They in nania?")
-            return
-        messages.reverse()
-        chat_log = "\n".join(messages)
+    if len(messages) < 5:
+        await interaction.followup.send("❌ I think everone ded in here. They in nania?")
+        return
+    messages.reverse()
+    chat_log = "\n".join(messages)
 
-        prompt = (
-            f"Read this revent chat log from a Discord channel:\n\n{chat_log}\n\n"
-            f"Write a sarcastic 2-5 sentence that summarize whatever was said."
-            f"Mock their trivial arguments or erratic behaviour too if any."
-            f"Output ONLY the summary text."
-        )
+    prompt = (
+        f"Read this revent chat log from a Discord channel:\n\n{chat_log}\n\n"
+        f"Write a sarcastic 2-5 sentence that summarize whatever was said."
+        f"Mock their trivial arguments or erratic behaviour too if any."
+        f"Output ONLY the summary text."
+    )
 
-        try:
-            response = await asyncio.wait_for(
-                genai_client.aio.models.generate_content(
-                    model="gemini-3.5-flash-lite",
-                    contents = prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                        temperature=0.6,
-                        max_output_tokens=250
-
+    try:
+        response = await asyncio.wait_for(
+            genai_client.aio.models.generate_content(
+                model="gemini-3.5-flash-lite",
+                contents = prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    temperature=0.6,
+                    max_output_tokens=250
                     )
-                ),
-                timeout=5.0
-            )
-            summary = response.text.strip()
+            ),
+            timeout=5.0
+        )
+        summary = response.text.strip()
 
-        except asyncio.TimeoutError:
-            await interaction.followup.send(F"❌ Ai error: {str(e)}")
-            return
-        except Exception as e:
-            await interaction.followup.send(f"📜 **TL;DR ({limit} messages):**\n\n> {summary}")
+    except asyncio.TimeoutError:
+        await interaction.followup.send(F"❌ Ai error: {str(e)}")
+        return
+    except Exception as e:
+        await interaction.followup.send(f"📜 **TL;DR ({limit} messages):**\n\n> {summary}")
 
-# 16./receipt
-@app_commands.command("receipts", description = "UNO REVERSE!!!")
+# 17./receipt
+@bot.tree.command(name="receipts", description = "UNO REVERSE!!!")
 async def receipts_cmd(interaction: discord.Interaction, target: discord.Member, claim: str):
 
     await interaction.response.defer()

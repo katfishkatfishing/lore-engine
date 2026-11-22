@@ -27,17 +27,35 @@ STOPWORDS = {
 
 
 
-def compute_stats(target_aliases: list) -> dict:
+def compute_stats(target_aliases: list, user_id: str = None) -> dict:
     """calculates behavioural stats for a given user based on the chunks"""
     collection = get_collection()
 
+    if user_id:
+        where_clause = {
+            "$or": [
+                {"messager_id": str(user_id)},
+                {"messager_name": {"$in": target_aliases}}
+            ]
+        }
+    else:
+        where_clause = {"messager_name": {"$in": target_aliases}}
+
     results = collection.get(
-        where={"messager_name": {"$in": target_aliases}},
+        where= where_clause,
         limit= 15000,
         include=["documents", "metadatas"]
         )
 
     if not results or not results.get("documents"):
+        sample = collection.get(limit=500, include=["metadatas"])
+        stored_names = sorted({
+            m.get("messager_name", "Unknown")
+            for m in (sample.get("metadatas") or [])
+            if isinstance(m, dict)
+        })
+        print(f"[debug] 0 ID={user_id}/ aliases={target_aliases}")
+        print(f"[debug] messager_names in db {stored_names[:20]}")
         return None
 
     user_lines = []
@@ -59,9 +77,12 @@ def compute_stats(target_aliases: list) -> dict:
                 meta = {}
 
         author = meta.get("messager_name", "Unknown User")
+        author_id = str(meta.get("messager_id", ""))
 
+        id_match = bool(user_id and author_id == str(user_id))
+        name_match = any(alias.lower() in author.lower() for alias in target_aliases)
         # Process quotes from the target user
-        if not any(alias.lower() in author.lower() for alias in target_aliases):
+        if not id_match and not name_match:
             continue
 
         msg = docs[i].strip()
@@ -93,7 +114,7 @@ def compute_stats(target_aliases: list) -> dict:
         "peak_hour": "Unknown", 
         "night_owl_pct": "Unknown",
         "top_words": [word for word, _ in word_counter.most_common(6)],
-        "sample_logs": user_lines[-5:]
+        "sample_logs": user_lines[-30:]
     }
 
 async def generate_stats(aliases: list, primary_name: str) -> dict:
@@ -171,13 +192,16 @@ async def generate_stats(aliases: list, primary_name: str) -> dict:
 
     return final_report
 
-async def generate_impersonation(aliases: list, primary_name: str, topic: str) -> str:
-    stats = await asyncio.to_thread(compute_stats, aliases)
+async def generate_impersonation(aliases: list, primary_name: str, topic: str, user_id: str = None) -> str:
+    print(f"\n[debug] /impersonate fetch chromadb for {primary_name} | aliases: {aliases}")
+    stats = await asyncio.to_thread(compute_stats, aliases, user_id)
 
-    if not stats or not stats.get("ssample_logs"):
+    if not stats or not stats.get("sample_logs"):
+        print(f"[debug] impersonate fail no sample log found for {primary_name}")
         return f"❌ Not enuf chat history from {primary_name} to impersonate"
 
     sample_logs = stats["sample_logs"]
+    print(f"[debug] impersonate found {len(sample_logs)} sample line {primary_name}")
     samples_str = "\n".join(sample_logs[:30])
 
     prompt = (
@@ -188,16 +212,29 @@ async def generate_impersonation(aliases: list, primary_name: str, topic: str) -
         f"Output ONLY the raw impersonation text, without any quotation marks or introductions."
     )
 
+    prompt =(
+        f"Here are Discord messages sent by {primary_name}:\n\n"
+        f"{samples_str}\n\n"
+        f"Give your take on '{topic} AS {primary_name}."
+        f"Match their exact punctuatio, lowercase/uppercase habits, slang, and sentence length."
+        f"Keep it to 1-3 sentences."
+        )
+
     result = None
 
     for attempt in range(3):
         try:
+            print(f"[debug] impersonate gemini attempt {attempt + 1}"),
             response = await asyncio.wait_for(
                 genai_client.aio.models.generate_content(
                     model="gemini-3.5-flash-lite",
                     contents = prompt,
                     config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
+                        system_instruction=(
+                            f"You ARE {primary_name} on Discord. Speak strictly in first person as them."
+                            "Never break character, never refer to them in third person, and never mention chat logs or archives."
+                            "Output ONLY the raw Discord message with no quotation marks."
+                        ),
                         temperature=0.85,
                         max_output_tokens=150
                     )
@@ -209,6 +246,7 @@ async def generate_impersonation(aliases: list, primary_name: str, topic: str) -
         except asyncio.TimeoutError:
             continue
         except Exception as e:
+            print(f"[debug] impersonate ai error: {e}")
             return f"❌ Ai error: {str(e)}"
 
     if not result:
