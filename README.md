@@ -27,6 +27,24 @@ so far has:
 - higher or lower game (not implemented yet)
 - ultra impossible wordle (sentencedle) [pls send help]
 
+## Commands
+- /ask = ask anything about the server/members
+- /assess = assess members
+- /impersonate = impersonate a members to reply to the topic given
+- /leaderboard = vote leaderboard for the best quote of the month and year
+- /lookup [Search query] [is special] [by user] = lookup a specific quote
+- - search_query = specific quote
+  - is_special = True is it has been saved, False if auto-logged
+  - by_user = specific member
+- /nerdle start = start impossible wordle
+- /nerdle guess = guess nerdle with this command and MUST END WITH .
+- /nerdle status = see the status of the nerdle
+- /ping = no explanation needed
+- /receipts = uno reverse someone
+- /tldr = sum up latest messages (broken for now)
+- /trivia - guess who said it
+- /type = test your typing speed
+
 ## How to get this bot for yourself?
 for now you have to self host it, probably won't publish this
 1. clone the repo
