@@ -1,14 +1,19 @@
 # lore-engine
+
+> Third-space Hack club week 6&7!
+
 a discord bot ai assistant built specifically for your friend group that acts like a sassy server historian and gameshow host
 
 a wip website for this bot [here](https://katfishing.dev).
 
-> Third-space Hack club week 6&7!
+## To Reviewer
 
-> [!To REVIEWER]
+> ⚠️**TO REVIEWER**
+>
 > pls read the description for our latest third-space ship to test the bot. It is currently only available for our private server and hackclub nest application is still pending...
 
-# Features
+
+## Features
 so far has:
 - website, but like idk how to let it be accessible by people other than the host lol
 - dc chat indexing
@@ -22,7 +27,7 @@ so far has:
 - higher or lower game (not implemented yet)
 - ultra impossible wordle (sentencedle) [pls send help]
 
-# How to get this bot for yourself?
+## How to get this bot for yourself?
 for now you have to self host it, probably won't publish this
 1. clone the repo
 2. install chromadb and fastapi
