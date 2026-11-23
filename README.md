@@ -3,7 +3,7 @@ a discord bot ai assistant built specifically for your friend group that acts li
 
 a wip website for this bot [here](https://katfishing.dev).
 
-> Third-space Hack club week 6!
+> Third-space Hack club week 6&7!
 
 # Features
 so far has:
