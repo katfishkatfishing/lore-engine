@@ -32,7 +32,7 @@ so far has:
 - /assess = assess members
 - /impersonate = impersonate a members to reply to the topic given
 - /leaderboard = vote leaderboard for the best quote of the month and year
-- - - /lookup [Search query] [is special] [by user] = lookup a specific quote
+- /lookup [Search query] [is special] [by user] = lookup a specific quote
   - search_query = specific quote
   - is_special = True is it has been saved, False if auto-logged
   - by_user = specific member
@@ -48,7 +48,7 @@ so far has:
 - /tldr = sum up latest messages (broken for now)
 - /trivia - guess who said it
 - /type = test your typing speed
-- - Saving quotes as special
+- Saving quotes as special
   - !save = save someone's message as special quote
   - (hover over message and press ... > App > Save quote)
   - use 🔖(bookmark emoji) reaction
