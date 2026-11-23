@@ -831,5 +831,7 @@ async def receipts_cmd(interaction: discord.Interaction, target: discord.Member,
         f"{response_text}"
     )
 
+    
+
 # start the bot
 bot.run(TOKEN)
