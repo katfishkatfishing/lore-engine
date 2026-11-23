@@ -9,8 +9,8 @@ from collections import Counter
 from pathlib import Path
 from google.genai import types
 from database import get_collection
-from src.database import genai_client, search, load_chunks
-from src.ai import SYSTEM_PROMPT
+from database import genai_client, search, load_chunks
+from ai import SYSTEM_PROMPT
 
 CHUNKS_FILE = Path(__file__).parent/"data"/"cleaned"/"organisedGoesHere.json"
 CACHE_FILE = Path("data/cleaned/cache.json")
