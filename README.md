@@ -16,8 +16,8 @@ so far has:
 - hall of shame thing (wip)
 - hall of fame (wip)
 - totally not family feud
-- higher or lower game
-- ultra impossible wordle (sentencedle)
+- higher or lower game (not implemented yet)
+- ultra impossible wordle (sentencedle) [pls send help]
 
 # How to get this bot for yourself?
 for now you have to self host it, probably won't publish this(?)
@@ -26,6 +26,7 @@ for now you have to self host it, probably won't publish this(?)
 3. download and convert dc chat logs into json
 4. put the json file into data/raw
 5. run the cleanData.py let it do its thing then it should work(?)
-6. get urself a dc bot account and stuff then plug in the api key
+6. get urself a dc bot account, invite to your server then plug in the api key
 7. also plug in ai api key, the code uses gemini sooo its forced unless u change it
+8. Run src/lore-engine.py and your done!
 
