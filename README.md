@@ -10,7 +10,7 @@ a wip website for this bot [here](https://katfishing.dev).
 
 > ⚠️**TO REVIEWER**
 >
-> pls read the description for our latest third-space ship to test the bot. It is currently only available for our private server and hackclub nest application is still pending...
+> pls read the description for our latest third-space ship to test the bot.
 
 
 ## Features
@@ -49,7 +49,7 @@ so far has:
 - /trivia - guess who said it
 - /type = test your typing speed
 - Saving quotes as special
-  - (reply message with) !save = save someone's message as special quote
+  - (reply message with) !save
   - (hover over message and press ... > App > Save quote)
   - use 🔖(bookmark emoji) reaction
 
