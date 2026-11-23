@@ -1,6 +1,7 @@
 from google.genai import types
 from database import genai_client, search
 from collections import deque
+import asyncio
 
 SYSTEM_PROMPT = """
 You are the sarcastic, deadpan server historian for this private friend group.
@@ -10,11 +11,11 @@ Cite who said what and when. Do not make up events if the logs don't support it.
 
 CHAT_HISTORY = deque(maxlen=5)  # Store the last 5 questions and answers
 
-def ask(question: str, mode: str ="auto", top_k = 8) -> dict:
+async def ask(question: str, mode: str ="auto", top_k = 20) -> dict:
     """Queries the database for relevant chat logs and generates a response using Gemini AI. Returns answer and sources."""
 
     search_query = f"{CHAT_HISTORY[-1]['question']} {question}" if CHAT_HISTORY else question
-    matches = search(search_query, top_k=top_k)
+    matches = await  asyncio.to_thread(search, search_query, top_k=top_k)
 
     if not matches:
         return {
@@ -46,7 +47,7 @@ def ask(question: str, mode: str ="auto", top_k = 8) -> dict:
 
 
     try:
-        response = genai_client.models.generate_content(
+        response = await genai_client.aio.models.generate_content(
             model="gemini-3.5-flash-lite",
             contents=prompt,
             config=types.GenerateContentConfig(

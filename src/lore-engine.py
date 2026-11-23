@@ -538,10 +538,15 @@ async def ask_lore(interaction: discord.Interaction, question: str):
 
     try:
         # call gemini RAG function from ai.py
-        result = ask(question)
+        result = await asyncio.wait_for(
+            ask(question),
+            timeout = 15.0
+            )
 
         response = f"**Q: {question}**\n\n{result['answer']}"
         await interaction.followup.send(response)
+    except asyncio.TimeoutError:
+        await interaction.followup.send("Someone haording gemini server i think")
     except Exception as e:
         await interaction.followup.send(f"❌ More credits maybe lol?: `{e}`")
 
@@ -553,10 +558,10 @@ async def trivia(interaction: discord.Interaction):
 
     try:
         # generate trivia from features.py
-        game = get_trivia()
+        game = await asyncio.wait_for(asyncio.to_thread(get_trivia), timeout=15.0)
 
         if "error" in game:
-            await interaction .followup.send("❌ Not enough data to play trivia yet!")
+            await interaction.followup.send("❌ Not enough data to play trivia yet!")
             return
             
         options_text = "\n".join([f"• {opt}" for opt in game['options']])
@@ -659,11 +664,12 @@ async def nerdle_start(interaction: discord.Interaction):
     else:
         await interaction.followup.send("⚠️ **Game is already running woi!** Use `/nerdle status` to see the board.")
 
-# 14./type_test
+# 14./type
 @bot.tree.command(name="type", description="Test your typing speed")
 async def type_test(interaction: discord.Interaction):
 
     await interaction.response.defer()
+    print(f"\n[debug] /type started by {interaction.user.display_name}")
 
     target_sentence = ""
 
@@ -684,6 +690,7 @@ async def type_test(interaction: discord.Interaction):
             timeout= 4.0
         )
         target_sentence = response.text.strip().strip('"').strip("'")
+        print(f"[debug] /type generated")
 
     except Exception as e:
         # just in case scam altman stole all the server
@@ -693,47 +700,47 @@ async def type_test(interaction: discord.Interaction):
         ]
         target_sentence = random.choice(fallbacks)
 
-        # just in case copy paste
-        anti_cheat_text = "".join(char + "\u200b" for char in target_sentence)
+    # just in case copy paste
+    anti_cheat_text = "".join(char + "\u200b" for char in target_sentence)
 
-        await interaction.followup.send(
-            f"**Typing Test!** Type the following as fast as u can booooooi\n"
-            f"Timer starts NOOOOOOOOOW!\n\n> {anti_cheat_text}"
-        )
+    await interaction.followup.send(
+        f"**Typing Test!** Type the following as fast as u can booooooi\n"
+        f"Timer starts NOOOOOOOOOW!\n\n> {anti_cheat_text}"
+    )
 
-        start_time = time.time()
+    start_time = time.time()
 
-        def check(m):
-            return m.author == interaction.user and m.channel == interaction.channel
+    def check(m):
+        return m.author == interaction.user and m.channel == interaction.channel
 
-        try:
-            msg = await bot.wait_for('message', check=check, timeout= 60.0)
-        except asyncio.TimeoutError:
-            await interaction.channel.send(f"⏳ {interaction.user.mention}, Tik Tok slow poke game over")
-            return
+    try:
+        msg = await bot.wait_for('message', check=check, timeout= 60.0)
+    except asyncio.TimeoutError:
+        await interaction.channel.send(f"⏳ {interaction.user.mention}, Tik Tok slow poke game over")
+        return
 
-        end_time = time.time()
-        time_taken = end_time - start_time
-        user_input = msg.content.strip()
+    end_time = time.time()
+    time_taken = end_time - start_time
+    user_input = msg.content.strip()
 
-        word_count = len(target_sentence)/ 5
-        minutes = time_taken / 60
-        wpm = round(word_count / minutes)
+    word_count = len(target_sentence)/ 5
+    minutes = time_taken / 60
+    wpm = round(word_count / minutes)
 
-        matcher = difflib.SequenceMatcher(None, target_sentence, user_input)
-        accuracy = round(matcher.ratio() * 100, 2)
+    matcher = difflib.SequenceMatcher(None, target_sentence, user_input)
+    accuracy = round(matcher.ratio() * 100, 2)
 
-        verdict = "🔥 Cookin'!" if accuracy == 100 else "🤡 So many typo, u asian or not? GO back to school!" if accuracy > 85 else "💀 Folded under 0 pressure"
-        if accuracy < 10:
-            verdict = "🚨 CHEATER CHEATER PANTS ON FIRE"
-            wpm = 0
+    verdict = "🔥 Cookin'!" if accuracy == 100 else "🤡 So many typo, u asian or not? GO back to school!" if accuracy > 85 else "💀 Folded under 0 pressure"
+    if accuracy < 10:
+        verdict = "🚨 CHEATER CHEATER PANTS ON FIRE"
+        wpm = 0
 
-        await msg.reply(
-            f"⏱️ **Time:** {time_taken:.2f} seconds\n"
-            f"⌨️ **Speed:** {wpm} WPM\n"
-            f"🎯 **Accuracy:** {accuracy}%\n"
-            f"*{verdict}*"
-        )
+    await msg.reply(
+        f"⏱️ **Time:** {time_taken:.2f} seconds\n"
+        f"⌨️ **Speed:** {wpm} WPM\n"
+        f"🎯 **Accuracy:** {accuracy}%\n"
+        f"*{verdict}*"
+    )
 
 # 15./impersonate
 @bot.tree.command(name="impersonate", description="The Mimic?!?!")

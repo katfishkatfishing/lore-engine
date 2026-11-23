@@ -36,33 +36,62 @@ def get_collection():
         embedding_function=default_ef
     )
 
-def search(query: str, top_k: int = 5) -> list[dict]:
+def search(query: str, top_k: int = 20) -> list[dict]:
     """Searches the bot's live quote archive."""
     collection = get_collection()
+    total_count = collection.count()
     
     if collection.count() == 0:
         return []
 
+    query_lower = query.lower()
+
     # query the database
-    results = collection.query(query_texts=[query], n_results=top_k)
+    meta_sample = collection.get(limit=5000, include=["metadatas"])
+    known_names = {
+        m.get("messager_name")
+        for m in (meta_sample.get("metadatas") or [])
+        if isinstance(m, dict) and m.get("messager_name")
+    }
+    matched_authors = [name for name in known_names if name.lower() in query_lower]
 
-    if not results["documents"] or not results["documents"][0]:
-        return []
-
+    seen_ids = set()
     candidates = []
-    # format the results to match ai.py expects
-    for i in range(len(results["documents"][0])):
-        meta = results["metadatas"][0][i]
-        
-        candidates.append({
-            "id": results["ids"][0][i],
-            "channel": meta.get("channel", "unknown"),
-            "time": "Recent", # The bot doesn't save timestamps yet, so we use a placeholder
-            "authors": meta.get("messager_name", "Unknown User"), 
-            "text": results["documents"][0][i],
-        })
 
-    return candidates
+
+    def add_results(results):
+        if not results or not results.get("documents") or not results["documents"][0]:
+            return
+        for i in range(len(results["documents"][0])):
+            doc_id = results["ids"][0][i]
+            if doc_id in seen_ids:
+                continue
+            seen_ids.add(doc_id)
+            meta = results["metadatas"][0][i] or {}
+            candidates.append({
+                "id": results["ids"][0][i],
+                "channel": meta.get("channel", "unknown"),
+                "time": "Recent", # The bot doesn't save timestamps yet, so we use a placeholder
+                "authors": meta.get("messager_name", "Unknown User"), 
+                "text": results["documents"][0][i],
+            })
+    limit = min(top_k, total_count)
+
+    if matched_authors:
+        author_results = collection.query(
+            query_texts=[query],
+            n_results=limit,
+            where={"messager_name": {"$in": matched_authors}}
+        )
+        add_results(author_results)
+
+    general_results = collection.query(
+        query_texts=[query],
+        n_results=limit,
+    )
+    add_results(general_results)
+    
+    return candidates[:top_k]
 
 def load_chunks() -> list[dict]:
     """Loads the cleaned lore chunks from the JSON file."""

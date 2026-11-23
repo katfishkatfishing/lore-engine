@@ -297,7 +297,7 @@ async def generate_receipts(aliases: list, primary_name: str, claim: str) -> str
         return f"Wow might be right"
 
     docs = results["documents"][0]
-    evidence_str = "\n".join([f"- \"{docs}" for doc in docs])
+    evidence_str = "\n".join([f'- "{docs}"' for doc in docs])
 
     roast_prompt = (
         f"User '{primary_name}' made the bold claim: \"{claim}\".\n\n"

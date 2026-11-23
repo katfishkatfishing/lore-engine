@@ -15,7 +15,7 @@ class Wordle:
 
     # letter to emoji
     def _to_emoji(self, char: str) -> str:
-        if char.isalpha:
+        if char.isalpha():
             offset = ord(char.upper()) - ord('A')
             return chr(0x1F1E6 + offset) + '\u200B'
         return char
@@ -75,7 +75,7 @@ class Wordle:
 
         # yellow
         for i in range(len(target)):
-            if result[i] == target[i]:
+            if guess[i] == target[i]:
                 continue
             if guess[i] in target_counts and target_counts[guess[i]] > 0:
                 result[i] = "🟨"
