@@ -10,7 +10,7 @@ a wip website for this bot [here](https://katfishing.dev).
 
 > ⚠️**TO REVIEWER**
 >
-> pls read the description for our latest third-space ship to test the bot. It is currently only available for our private server and hackclub nest application is still pending...
+> pls read the description for our latest third-space ship to test the bot.
 
 
 ## Features
