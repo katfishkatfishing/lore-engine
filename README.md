@@ -36,7 +36,7 @@ so far has:
   - search_query = specific quote
   - is_special = True is it has been saved, False if auto-logged
   - by_user = specific member
-  - - Voting (appear after quoted message is sent by bot)
+  - Voting (appear after quoted message is sent by bot)
     - ⬆️ upvote
     - ⬇️ downvote
     - ❌ abstain
