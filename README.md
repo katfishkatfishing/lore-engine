@@ -49,7 +49,7 @@ so far has:
 - /trivia - guess who said it
 - /type = test your typing speed
 - Saving quotes as special
-  - !save = save someone's message as special quote
+  - (reply message with) !save = save someone's message as special quote
   - (hover over message and press ... > App > Save quote)
   - use 🔖(bookmark emoji) reaction
 
