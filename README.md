@@ -5,7 +5,7 @@ a wip website for this bot [here](https://katfishing.dev).
 
 > Third-space Hack club week 6&7!
 
->[!To REVIEWER]
+> [!To REVIEWER]
 > pls read the description for our latest third-space ship to test the bot. It is currently only available for our private server and hackclub nest application is still pending...
 
 # Features
