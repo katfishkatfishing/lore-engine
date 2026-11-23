@@ -1,11 +1,19 @@
 # lore-engine
+
+> Third-space Hack club week 6&7!
+
 a discord bot ai assistant built specifically for your friend group that acts like a sassy server historian and gameshow host
 
 a wip website for this bot [here](https://katfishing.dev).
 
-> Third-space Hack club week 6!
+## To Reviewer
 
-# Features
+> ⚠️**TO REVIEWER**
+>
+> pls read the description for our latest third-space ship to test the bot. It is currently only available for our private server and hackclub nest application is still pending...
+
+
+## Features
 so far has:
 - website, but like idk how to let it be accessible by people other than the host lol
 - dc chat indexing
@@ -14,18 +22,19 @@ so far has:
 - two truths one lie (based on chat logs or fetches questions online)
 - game style update patch notes
 - hall of shame thing (wip)
-- hall of fame (wip)
+- hall of fame (leaderboard)
 - totally not family feud
-- higher or lower game
-- ultra impossible wordle (sentencedle)
+- higher or lower game (not implemented yet)
+- ultra impossible wordle (sentencedle) [pls send help]
 
-# How to get this bot for yourself?
-for now you have to self host it, probably won't publish this(?)
+## How to get this bot for yourself?
+for now you have to self host it, probably won't publish this
 1. clone the repo
 2. install chromadb and fastapi
 3. download and convert dc chat logs into json
 4. put the json file into data/raw
-5. run the cleanData.py let it do its thing then it should work(?)
-6. get urself a dc bot account and stuff then plug in the api key
+5. run the cleanData.py let it do its thing then it should work
+6. get urself a dc bot account, invite to your server then plug in the api key
 7. also plug in ai api key, the code uses gemini sooo its forced unless u change it
+8. Run src/lore-engine.py and your done!
 
