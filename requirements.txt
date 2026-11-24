@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+discord.py
+chromadb
+sentence-transformers
+google-genai
+python-dotenv
+requests
+pillow
