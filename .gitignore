@@ -13,3 +13,5 @@ __pycache__/
 # hide our discord chat history
 data/cleaned
 data/raw
+data/chromadb/
+vote.db
