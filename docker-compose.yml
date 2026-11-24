@@ -39,3 +39,11 @@ services:
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
     restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: lore-engine-tunnel
+    command: tunnel --no-autoupdate run --token CLOUDFLARE_TUNNEL_TOKEN
+    depends_on:
+      - frontend
+    restart: unless-stopped
